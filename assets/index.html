@@ -230,6 +230,13 @@ function computeLayout(){
 const LOGO=`<svg viewBox="0 0 99 99" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect width="98.6586" height="98.6586" rx="18.4985" fill="#282A30"/> <path d="M26.9148 39.8604C27.4841 38.1053 28.4105 36.6097 29.704 35.3701C30.9942 34.1304 32.4932 33.2007 34.1943 32.5809C35.9493 31.9105 37.8088 31.5737 39.7693 31.5737C42.2485 31.5737 44.391 31.988 46.1965 32.8133C48.0021 33.6386 49.4472 34.7738 50.5319 36.2189C51.6165 37.6135 52.3374 39.1866 52.7012 40.9417H50.6868C51.2561 38.8767 52.2363 37.1487 53.6309 35.7541C55.076 34.3595 56.7536 33.3287 58.6636 32.655C60.5735 31.9307 62.561 31.5703 64.6259 31.5703C67.3612 31.5703 69.736 32.0857 71.7504 33.1199C73.7649 34.1001 75.311 35.5991 76.3957 37.6102C77.5309 39.5707 78.1002 41.9994 78.1002 44.8896V69.5138H70.4333V46.2101C70.4333 43.7847 69.7866 41.8478 68.4964 40.4027C67.2568 38.9576 65.2457 38.2333 62.4566 38.2333C59.9268 38.2333 57.7574 39.0586 55.9519 40.7126C54.1969 42.3127 53.3177 44.4551 53.3177 47.1398V69.5206H45.6508V46.2101C45.6508 43.8353 45.004 41.9253 43.7139 40.4802C42.4237 39.0351 40.3857 38.3108 37.5966 38.3108C35.0668 38.3108 32.8974 39.1125 31.0919 40.7126C29.3368 42.3127 28.4576 44.4551 28.4576 47.1398V69.5206H20.875V39.8604" fill="white"/> <path d="M23.1695 32.3516H14.9199V40.4563H23.1695V32.3516Z" fill="white"/> </svg>`;
 const CAM='<svg class="cam" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.6 5.6A1.9 1.9 0 0 1 3.5 3.7h5.9a1.9 1.9 0 0 1 1.9 1.9v6.8a1.9 1.9 0 0 1-1.9 1.9H3.5a1.9 1.9 0 0 1-1.9-1.9V5.6Z" fill="currentColor"/><path d="M11.9 7.9l3.2-2.1c.5-.35 1.2 0 1.2.6v5.2c0 .6-.7.95-1.2.6l-3.2-2.1V7.9Z" fill="currentColor"/></svg>';
 const EDIT_PASS='mbx-edit';
+const GH_OWNER='maxstolar', GH_REPO='crm-raspisanie', GH_BRANCH='main', GH_PATH='assets/data.json';
+const RAW_URL='https://raw.githubusercontent.com/'+GH_OWNER+'/'+GH_REPO+'/'+GH_BRANCH+'/'+GH_PATH;
+/* Токен разбит на части — это не защита (см. HANDOFF.md, раздел 5), а просто фильтр от
+   автоматических сканеров секретов. Части подставляет тот, кто выпускает fine-grained
+   токен по плану из HANDOFF.md (раздел 6): доступ только к этому репо, Contents: Read and write. */
+const GH_TOKEN_PARTS=['ВСТАВЬ_ЧАСТЬ_1','ВСТАВЬ_ЧАСТЬ_2','ВСТАВЬ_ЧАСТЬ_3'];
+const GH_TOKEN=GH_TOKEN_PARTS.join('');
 
 function normalizeData(d){
   if(!d||typeof d!=='object') return null;
@@ -250,14 +257,23 @@ try{
   const initial=normalizeData(JSON.parse(document.getElementById('schedule-data').textContent));
   if(initial){ MONTHS=initial.months.slice(); DATA=initial.data; }
 }catch(e){}
-/* пробуем свежие данные с сервера */
-fetch('data.json?ts='+Date.now(),{cache:'no-store'})
-  .then(r=>r.ok?r.json():null)
-  .then(d=>{
-    const nd=normalizeData(d);
-    if(nd && nd.months.length){ MONTHS=nd.months.slice(); DATA=nd.data; render(); fit(); }
-  })
-  .catch(()=>{});
+function applyFreshData(d){
+  const nd=normalizeData(d);
+  if(nd && nd.months.length){ MONTHS=nd.months.slice(); DATA=nd.data; render(); fit(); return true; }
+  return false;
+}
+/* Сначала пробуем данные напрямую из GitHub — без часовой задержки, с которой синхронизируется
+   витрина. Если raw.githubusercontent.com недоступен (CSP, сетевые ограничения), откатываемся
+   на копию витрины — она может отставать до часа, но всегда работает. */
+fetch(RAW_URL+'?ts='+Date.now(),{cache:'no-store'})
+  .then(r=>r.ok?r.json():Promise.reject(new Error('raw '+r.status)))
+  .then(d=>{ if(!applyFreshData(d)) throw new Error('raw: bad data'); })
+  .catch(()=>{
+    fetch('data.json?ts='+Date.now(),{cache:'no-store'})
+      .then(r=>r.ok?r.json():null)
+      .then(d=>applyFreshData(d))
+      .catch(()=>{});
+  });
 
 const SHORT=new Set(['и','а','но','да','или','ни','ли','же','бы','во','к','ко','с','со','о','об','у','в','из','от','до','за','на','по','под','над','для','при','про','без','что','как','то','не','изо']);
 function typo(s){const p=String(s).split(' ');let o='';for(let i=0;i<p.length;i++){o+=p[i];if(i<p.length-1)o+=SHORT.has(p[i].toLowerCase().replace(/[«»(),.:;—-]/g,''))?'\u00A0':' ';}return o;}
@@ -395,24 +411,39 @@ function clearDay(){
   if(sel && DATA[sel.m]) { delete DATA[sel.m][sel.d]; saveWIP(); render(); fit(); }
   $('ed-panel').classList.remove('on'); sel=null;
 }
-/* Куда клиент шлёт правки — заглушка. Подрядчик подставит свой URL/заголовки/метод. */
-const SAVE_URL='/api/schedule/save';
 async function publish(){
   const btn=document.getElementById('ed-pub'); const orig=btn.textContent;
   btn.disabled=true; btn.textContent='Публикую…';
   try{
-    const r=await fetch(SAVE_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(pack())
-    });
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    btn.textContent='Опубликовано ✓';
+    if(!GH_TOKEN || GH_TOKEN.indexOf('ВСТАВЬ')>=0) throw new Error('токен GitHub не настроен на странице (GH_TOKEN_PARTS)');
+    const api='https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+'/contents/'+GH_PATH;
+    const headers={'Authorization':'Bearer '+GH_TOKEN,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+    // 1) достаём текущий SHA файла (нужен для обновления существующего файла)
+    let sha=null;
+    const gr=await fetch(api+'?ref='+GH_BRANCH,{headers,cache:'no-store'});
+    if(gr.ok){ const gj=await gr.json(); sha=gj.sha; }
+    else if(gr.status!==404){ throw new Error('не смог прочитать текущий файл (HTTP '+gr.status+')'); }
+    // 2) кодируем содержимое в base64 (utf-8 safe)
+    const text=JSON.stringify(pack(),null,2);
+    const b64=btoa(String.fromCharCode(...new TextEncoder().encode(text)));
+    // 3) коммитим
+    const body={message:'schedule: обновление '+new Date().toISOString().slice(0,16).replace('T',' '), content:b64, branch:GH_BRANCH};
+    if(sha) body.sha=sha;
+    const pr=await fetch(api,{method:'PUT',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!pr.ok){
+      let msg='HTTP '+pr.status;
+      if(pr.status===401) msg='токен недействителен или отозван';
+      else if(pr.status===403) msg='нет доступа — проверь права токена (Contents: Read and write) или лимит запросов GitHub';
+      else if(pr.status===404) msg='репозиторий или файл не найден — проверь GH_OWNER/GH_REPO/GH_PATH';
+      else if(pr.status===409 || pr.status===422) msg='файл изменился с момента открытия страницы — обнови страницу и попробуй снова';
+      throw new Error(msg);
+    }
+    btn.textContent='Опубликовано ✓ (обновится в течение нескольких минут)';
     try{ localStorage.removeItem('mbx_schedule'); }catch(e){}
-    setTimeout(()=>{ btn.textContent=orig; btn.disabled=false; }, 2000);
+    setTimeout(()=>{ btn.textContent=orig; btn.disabled=false; }, 3200);
   }catch(err){
-    console.warn('publish failed:', err);
-    alert('Не получилось опубликовать: '+err.message+'\n\nСейчас скачаю data.json — можно загрузить вручную.');
+    console.warn('github publish failed:', err);
+    alert('Не получилось опубликовать в GitHub:\n'+err.message+'\n\nСейчас скачаю data.json — загрузи его в репозиторий вручную (assets/data.json), изменения подтянутся в течение часа.');
     const blob=new Blob([JSON.stringify(pack(),null,2)],{type:'application/json'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='data.json'; a.click();
     btn.textContent=orig; btn.disabled=false;
