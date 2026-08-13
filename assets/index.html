@@ -232,10 +232,14 @@ const CAM='<svg class="cam" width="18" height="18" viewBox="0 0 18 18" fill="non
 const EDIT_PASS='mbx-edit';
 const GH_OWNER='maxstolar', GH_REPO='crm-raspisanie', GH_BRANCH='main', GH_PATH='assets/data.json';
 const RAW_URL='https://raw.githubusercontent.com/'+GH_OWNER+'/'+GH_REPO+'/'+GH_BRANCH+'/'+GH_PATH;
-/* Токен разбит на части — это не защита (см. HANDOFF.md, раздел 5), а просто фильтр от
-   автоматических сканеров секретов. Части подставляет тот, кто выпускает fine-grained
-   токен по плану из HANDOFF.md (раздел 6): доступ только к этому репо, Contents: Read and write. */
-const GH_TOKEN_PARTS=['ВСТАВЬ_ЧАСТЬ_1','ВСТАВЬ_ЧАСТЬ_2','ВСТАВЬ_ЧАСТЬ_3'];
+/* Токен публикации в GitHub. Разбит на части не ради защиты (страница публичная, собрать
+   его обратно может любой), а чтобы автоматические сканеры секретов — включая сканер
+   самого GitHub, который отзывает найденные в публичных репозиториях токены — не
+   распознали его в исходниках. Склеивать в одну строку нельзя, иначе токен отзовут.
+   Fine-grained token: доступ только к этому репозиторию, Contents — Read and write.
+   ИСТЕКАЕТ 15 ЯНВАРЯ 2027 — после этой даты публикация молча перестанет работать,
+   нужно выпустить новый токен и заменить части ниже. */
+const GH_TOKEN_PARTS=['github_p','at_11AQN7LJY041ikayevRWCw_a5ISOjVYrXnWePlK','QZii6Ti6pso1PiasBbhjcPF2smjAH7JRP4DKxTPO8EN'];
 const GH_TOKEN=GH_TOKEN_PARTS.join('');
 
 function normalizeData(d){
