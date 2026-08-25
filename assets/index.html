@@ -140,6 +140,10 @@ body.editing .m-del{position:absolute;background:rgba(242,27,27,.08);border:1px 
   padding:6px 10px 7px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;
   transform-origin:top left;z-index:5;}
 body.editing .m-del:hover{background:rgba(242,27,27,.16);}
+#ed-panel input[type=file]{padding:7px 9px;font-size:13px;background:#F8FAFB;cursor:pointer;}
+#ed-panel .up{display:block;font-size:12px;line-height:1.35;color:#9AA1AB;min-height:16px;margin-top:4px;}
+#ed-panel .up.ok{color:#39AA5D;}
+#ed-panel .up.err{color:#F21B1B;}
 
 </style>
 </head>
@@ -179,17 +183,22 @@ body.editing .m-del:hover{background:rgba(242,27,27,.16);}
     <div class="f"><label>Спикер 1 — имя</label><input id="ed-sp1n" placeholder="Имя Фамилия"></div>
     <div class="f"><label>файл</label><input id="ed-sp1f" placeholder="ermakov"></div>
   </div>
+  <div class="f"><label>Фото спикера 1 — обрежется в квадрат 120×120</label>
+    <input type="file" id="ed-sp1img" accept="image/*"><span class="up" id="ed-sp1st"></span></div>
   <div class="row">
     <div class="f"><label>Спикер 2 — имя</label><input id="ed-sp2n" placeholder="(если двое)"></div>
     <div class="f"><label>файл</label><input id="ed-sp2f" placeholder=""></div>
   </div>
+  <div class="f"><label>Фото спикера 2 — обрежется в квадрат 120×120</label>
+    <input type="file" id="ed-sp2img" accept="image/*"><span class="up" id="ed-sp2st"></span></div>
   <div class="chk"><input type="checkbox" id="ed-sm"><span>Мелкий шрифт заголовка</span></div>
   <div class="chk"><input type="checkbox" id="ed-deco"><span>Спец-визуал (workshop.png + свечение)</span></div>
   <div class="btns">
     <button class="apply" id="ed-apply">Применить</button>
     <button class="clear" id="ed-clear">Очистить</button>
   </div>
-  <div class="hint">«Применить» — обновляет страницу сразу. «Опубликовать» вверху — сохранить на сервере, чтобы правки увидели все.</div>
+  <div class="hint">«Применить» — обновляет страницу сразу. «Опубликовать» вверху — сохранить на сервере, чтобы правки увидели все.<br>
+    Фото загружается в репозиторий сразу при выборе файла — отдельно публиковать его не нужно. Имя файла берётся из поля «файл», а если оно пустое — из фамилии спикера.</div>
 </div>
 
 <script id="schedule-data" type="application/json">{"Сентябрь": {"1": {"type": "g", "t": "17:00 — 19:00", "ttl": "CRM‑маркетинг в бизнесе", "sp": [["Петр Ермаков", "ermakov"]]}, "2": {"type": "s", "bt": "Текст", "ttl": "Как строится системный CRM‑маркетинг", "sp": [["Майя Шахназарова", "shahnazarova"]]}, "3": {"type": "s", "bt": "Текст", "ttl": "Подготовка к вебинару"}, "4": {"type": "g", "t": "10:00 — 12:00", "ttl": "Бизнес‑модели и их влияние на маркетинг", "sp": [["Петр Ермаков", "ermakov"]]}, "7": {"type": "s", "bt": "Текст", "ttl": "Подготовка к вебинару"}, "8": {"type": "g", "t": "17:00 — 19:00", "ttl": "От воронки продаж — к плану CRM‑коммуникаций", "sp": [["Петр Ермаков", "ermakov"]]}, "9": {"type": "s", "bt": "Текст", "ttl": "CRM‑маркетинг в B2C и B2B", "sp": [["Петр Ермаков", "ermakov"]]}, "11": {"type": "g", "t": "10:00 — 12:00", "ttl": "Клиентские данные: что собирать и как использовать", "sp": [["Таня Панкова", "pankova"]]}, "14": {"type": "s", "bt": "Текст", "ttl": "Как собирать базу: инструменты и юридические требования", "sp": [["Таня Панкова", "pankova"]]}, "15": {"type": "s", "bt": "Текст", "ttl": "Качество базы: на что оно влияет и как его поддерживать", "sp": [["Таня Панкова", "pankova"]]}, "16": {"type": "s", "bt": "Текст и видео", "ttl": "Сегментация базы: принципы, уровни и методы + подготовка к вебинару", "sp": [["Таня Панкова", "pankova"]]}, "18": {"type": "g", "t": "10:00 — 12:00", "bt": "Вебинар и видео", "ttl": "Влияние сегментации на рост бизнес‑метрик", "sp": [["Таня Панкова", "pankova"]]}, "21": {"type": "s", "bt": "Текст", "ttl": "Обзор CRM‑каналов: какие подключать в первую очередь", "sp": [["Ирина Васильева", "Vasileva"]]}, "22": {"type": "g", "t": "17:00 — 19:00", "ttl": "Как запустить омниканальные коммуникации", "sp": [["Ирина Васильева", "Vasileva"]]}, "23": {"type": "s", "bt": "Текст", "ttl": ["Виды коммуникаций", "Триггерные и массовые рассылки"], "sp": [["Майя Шахназарова", "shahnazarova"]]}, "24": {"type": "s", "bt": "Текст", "ttl": "Мессенджеры: теория", "sp": [["Игорь Селицкий", "Selickiy"]]}, "25": {"type": "g", "t": "10:00 — 12:00", "ttl": "Мессенджеры: практика", "sp": [["Игорь Селицкий", "Selickiy"]]}, "28": {"type": "s", "bt": "Текст", "ttl": "Базовые коммуникации: какие сценарии запустить на старте", "sp": [["Евгения Цветкова", "Cvetkova"]]}, "29": {"type": "g", "t": "17:00 — 19:00", "ttl": "Карта клиентского пути (CJM): как построить и использовать", "sp": [["Евгения Цветкова", "Cvetkova"]]}, "30": {"type": "s", "bt": "Текст", "sm": true, "ttl": "Продвинутые коммуникации: переходим от универсальных рассылок к индивидуальным", "sp": [["Евгения Цветкова", "Cvetkova"]]}}, "Октябрь": {"1": {"type": "s", "bt": "Текст", "ttl": "Подготовка к вебинару"}, "2": {"type": "g", "t": "10:00 — 12:00", "ttl": "Аудит сценариев: 7 элементов, на которые нужно обратить внимание", "sp": [["Евгения Цветкова", "Cvetkova"]]}, "5": {"type": "s", "bt": "Текст", "ttl": "Метрики доставляемости и вовлеченности по каналам", "sp": [["Андрей Носков", "noskov"]]}, "6": {"type": "s", "bt": "Текст", "ttl": "Монетарные метрики эффективности коммуникаций", "sp": [["Андрей Носков", "noskov"]]}, "7": {"type": "s", "bt": "Текст", "ttl": "Excel для CRM‑маркетолога", "sp": [["Андрей Носков", "noskov"]]}, "9": {"type": "g", "t": "10:00 — 12:00", "ttl": "Отчеты по рассылкам — с нуля на сырых данных", "sp": [["Андрей Носков", "noskov"]]}, "12": {"type": "s", "bt": "Текст", "ttl": "Метрики клиентской базы", "sp": [["Азамат Тибилов", "tibilov"]]}, "13": {"type": "g", "t": "17:00 — 19:00", "ttl": "От цифр к решениям: воркшоп по отчету на главной Майндбокс", "sp": [["Арина Алымова", "alymova"], ["Лилит Саргсян", "sargsyan"]]}, "14": {"type": "s", "bt": "Текст", "ttl": "Бизнес‑метрики в CRM‑маркетинге", "sp": [["Азамат Тибилов", "tibilov"]]}, "15": {"type": "s", "bt": "Текст", "ttl": "Когортный анализ: построение отчета", "sp": [["Азамат Тибилов", "tibilov"]]}, "16": {"type": "g", "t": "10:00 — 12:00", "ttl": "Когортный анализ: генерация гипотез", "sp": [["Азамат Тибилов", "tibilov"]]}, "19": {"type": "s", "bt": "Текст", "ttl": "Подготовка к вебинару"}, "20": {"type": "g", "t": "17:00 — 19:00", "ttl": "Когортный анализ: практика построение отчета", "sp": [["Азамат Тибилов", "tibilov"]]}, "23": {"type": "s", "t": "Время уточняется", "nb": true, "deco": true, "viz": "workshop.png", "ttl": "Воркшоп на Конференции Mindbox"}, "26": {"type": "s", "bt": "Текст", "ttl": "Подготовка к вебинару"}, "27": {"type": "g", "t": "17:00 — 19:00", "ttl": "Веб‑аналитика для CRM‑маркетолога", "sp": [["Азамат Тибилов", "tibilov"]]}, "29": {"type": "s", "t": "17:00 — 19:00", "bt": "Текст", "ttl": "Анализ воронки коммуникаций", "sp": [["Азамат Тибилов", "tibilov"]]}, "30": {"type": "g", "t": "10:00 — 12:00", "ttl": "Предиктивная аналитика", "sp": [["Азамат Тибилов", "tibilov"]]}}, "Ноябрь": {"2": {"type": "s", "bt": "Текст", "ttl": ["Что такое AB‑тесты и зачем они нужны", "Как генерировать гипотезы"], "sp": [["Николай Белоусов", "belousov"]]}, "3": {"type": "g", "t": "17:00 — 19:00", "ttl": "Как приоритизировать гипотезы", "sp": [["Николай Белоусов", "belousov"]]}, "4": {"type": "s", "bt": "Текст и видео", "ttl": "Как провести AB‑тест в Mindbox", "sp": [["Николай Белоусов", "belousov"]]}, "5": {"type": "s", "bt": "Текст", "ttl": ["Основы матстатистики АВ‑тестов", "Виды тестов —", "AB, AA, AAB, ABC…"], "sp": [["Николай Белоусов", "belousov"]]}, "6": {"type": "g", "t": "10:00 — 12:00", "ttl": "Как спроектировать AB‑тест", "sp": [["Николай Белоусов", "belousov"]]}, "9": {"type": "s", "bt": "Текст", "ttl": "Как проанализировать результаты теста", "sp": [["Николай Белоусов", "belousov"]]}, "10": {"type": "g", "t": "17:00 — 19:00", "ttl": "Стратегия CRM‑маркетинга", "sp": [["Дмитрий Алпацкий", "Alpackiy"]]}, "12": {"type": "s", "bt": "Текст", "ttl": "Экономика CRM‑маркетинга", "sp": [["Дмитрий Алпацкий", "Alpackiy"]]}, "13": {"type": "g", "t": "10:00 — 12:00", "ttl": "Бонус‑практика: переговоры о бюджете", "sp": [["Дмитрий Алпацкий", "Alpackiy"]]}, "17": {"type": "g", "t": "17:00 — 19:00", "ttl": "Воркшоп по подготовке питча", "sp": [["Артем Гусев", "gusev"]]}, "19": {"type": "y", "ttl": "Дедлайн сдачи дипломной работы"}, "20": {"type": "g", "t": "10:00 — 12:00", "ttl": "Клиентоцентричность в CRM‑маркетинге", "sp": [["Виктор Крылов", "krylov"]]}, "24": {"type": "g", "t": "17:00 — 19:00", "ttl": "Бонус‑тема: самопрезентация на собеседовании", "sp": [["Даша Гуща", "guscha"]]}, "27": {"type": "k", "ttl": "Черная пятница"}}, "Декабрь": {"1": {"type": "g", "t": "17:00 — 19:00", "ttl": "Практикум по питчингу", "sp": [["Артем Гусев", "gusev"]]}, "4": {"type": "g", "t": "10:00 — 12:00", "ttl": "Agile в CRM-маркетинге: от хаоса задач к понятному процессу", "sp": [["Анастасия Елина", "Elina"]]}, "9": {"type": "y", "t": "Время уточняется", "bt": "Выпускной", "ttl": "Защита диплома онлайн — для тех, кто не сможет приехать в Москву"}, "10": {"type": "y", "t": "Время уточняется", "bt": "Выпускной", "ttl": "Защита диплома онлайн — для тех, кто не сможет приехать в Москву"}, "11": {"type": "y", "t": "Весь день", "bt": "Выпускной", "ttl": "Защита диплома офлайн в Москве"}}}</script>
@@ -231,7 +240,9 @@ const LOGO=`<svg viewBox="0 0 99 99" fill="none" xmlns="http://www.w3.org/2000/s
 const CAM='<svg class="cam" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.6 5.6A1.9 1.9 0 0 1 3.5 3.7h5.9a1.9 1.9 0 0 1 1.9 1.9v6.8a1.9 1.9 0 0 1-1.9 1.9H3.5a1.9 1.9 0 0 1-1.9-1.9V5.6Z" fill="currentColor"/><path d="M11.9 7.9l3.2-2.1c.5-.35 1.2 0 1.2.6v5.2c0 .6-.7.95-1.2.6l-3.2-2.1V7.9Z" fill="currentColor"/></svg>';
 const EDIT_PASS='mbx-edit';
 const GH_OWNER='maxstolar', GH_REPO='crm-raspisanie', GH_BRANCH='main', GH_PATH='assets/data.json';
-const RAW_URL='https://raw.githubusercontent.com/'+GH_OWNER+'/'+GH_REPO+'/'+GH_BRANCH+'/'+GH_PATH;
+/* База для чтения файлов репозитория напрямую, минуя часовую копию витрины. */
+const RAW_BASE='https://raw.githubusercontent.com/'+GH_OWNER+'/'+GH_REPO+'/'+GH_BRANCH+'/assets/';
+const RAW_URL=RAW_BASE+'data.json';
 /* Токен публикации в GitHub. Разбит на части не ради защиты (страница публичная, собрать
    его обратно может любой), а чтобы автоматические сканеры секретов — включая сканер
    самого GitHub, который отзывает найденные в публичных репозиториях токены — не
@@ -282,7 +293,23 @@ fetch(RAW_URL+'?ts='+Date.now(),{cache:'no-store'})
 const SHORT=new Set(['и','а','но','да','или','ни','ли','же','бы','во','к','ко','с','со','о','об','у','в','из','от','до','за','на','по','под','над','для','при','про','без','что','как','то','не','изо']);
 function typo(s){const p=String(s).split(' ');let o='';for(let i=0;i<p.length;i++){o+=p[i];if(i<p.length-1)o+=SHORT.has(p[i].toLowerCase().replace(/[«»(),.:;—-]/g,''))?'\u00A0':' ';}return o;}
 function initials(n){return n.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();}
-function avaHTML(sp){return '<div class="ava"><span class="ini">'+initials(sp[0])+'</span><img src="avatars/'+sp[1]+'.png" alt="" loading="lazy" onerror="this.remove()"></div>';}
+/* Слаг файла аватарки: оставляем только то, что безопасно и в имени файла, и в HTML-атрибуте. */
+function slugOK(f){ return String(f||'').replace(/[^A-Za-z0-9_-]/g,''); }
+/* Картинку сначала берём с витрины (тот же домен, быстро), при промахе — напрямую из GitHub.
+   Благодаря этому только что загруженное фото видно сразу, а не через час, когда витрина
+   синхронизируется. Если нет ни там, ни там — остаются инициалы. */
+function imgFallback(el){
+  const raw=el.getAttribute('data-raw');
+  if(raw && !el.dataset.tried){ el.dataset.tried='1'; el.src=raw; return; }
+  el.remove();
+}
+function avaHTML(sp){
+  const ini='<span class="ini">'+initials(sp[0])+'</span>';
+  const f=slugOK(sp[1]);
+  if(!f) return '<div class="ava">'+ini+'</div>';
+  return '<div class="ava">'+ini+'<img src="avatars/'+f+'.png" alt="" loading="lazy"'
+    +' data-raw="'+RAW_BASE+'avatars/'+f+'.png" onerror="imgFallback(this)"></div>';
+}
 function titleHTML(ttl,sm){const cls='title'+(sm?' sm':'');const arr=Array.isArray(ttl)?ttl:[ttl];return '<div class="'+cls+'">'+arr.map(l=>'<span>'+typo(l)+'</span>').join('')+'</div>';}
 function footHTML(sp){if(sp.length>1){return '<div class="foot two"><div class="avas">'+sp.map(avaHTML).join('')+'</div><div class="name">'+sp.map(s=>'<span>'+s[0]+'</span>').join('')+'</div></div>';}return '<div class="foot">'+avaHTML(sp[0])+'<span class="name">'+sp[0][0]+'</span></div>';}
 
@@ -301,7 +328,9 @@ function cellHTML(m,d){
   const theme={g:'green',s:'grey',y:'yellow',k:'black'}[it.type]||'grey';
   const cls='cell '+theme+(it.deco?' deco':'');
   const head='<div class="hd"><span class="num">'+d+'</span>'+(it.t?'<span class="time">'+it.t+'</span>':'')+'</div>';
-  const viz=it.viz?'<img class="viz" src="avatars/'+it.viz+'" alt="" onload="this.closest(\'.cell\').classList.remove(\'deco\')" onerror="this.remove()">':'';
+  const vf=String(it.viz||'').replace(/[^A-Za-z0-9_.-]/g,'');
+  const viz=vf?'<img class="viz" src="avatars/'+vf+'" alt="" data-raw="'+RAW_BASE+'avatars/'+vf+'"'
+    +' onload="this.closest(\'.cell\').classList.remove(\'deco\')" onerror="imgFallback(this)">':'';
   if(!it.ttl) return '<div class="'+cls+'"'+attr+' style="'+style+'">'+viz+'<div class="in">'+head+'</div></div>';
   let badge='';
   if(it.type==='g' && !it.nb) badge='<div class="badge">'+CAM+'<span>'+(it.bt||'Вебинар')+'</span></div>';
@@ -388,6 +417,7 @@ function openPanel(mName,d){
   $('ed-sp2n').value=sp[1]?sp[1][0]:''; $('ed-sp2f').value=sp[1]?sp[1][1]:'';
   $('ed-sm').checked=!!it.sm;
   $('ed-deco').checked=!!(it.deco||it.viz);
+  ['1','2'].forEach(n=>{ const st=$('ed-sp'+n+'st'); st.textContent=''; st.className='up'; });
   $('ed-panel').classList.add('on');
 }
 function applyPanel(){
@@ -415,33 +445,47 @@ function clearDay(){
   if(sel && DATA[sel.m]) { delete DATA[sel.m][sel.d]; saveWIP(); render(); fit(); }
   $('ed-panel').classList.remove('on'); sel=null;
 }
+/* ==================== ЗАПИСЬ В GITHUB ==================== */
+function ghErrText(status){
+  if(status===401) return 'токен недействителен или отозван';
+  if(status===403) return 'нет доступа — проверь права токена (Contents: Read and write) или лимит запросов GitHub';
+  if(status===404) return 'репозиторий не найден — проверь GH_OWNER/GH_REPO/GH_BRANCH';
+  if(status===409||status===422) return 'файл изменился с момента открытия страницы — обнови страницу и попробуй снова';
+  return 'HTTP '+status;
+}
+function ghHeaders(){
+  return {'Authorization':'Bearer '+GH_TOKEN,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+}
+/* Кладём файл в репозиторий. contentB64 — содержимое, уже закодированное в base64. */
+async function ghPutFile(path, contentB64, message){
+  if(!GH_TOKEN || GH_TOKEN.indexOf('ВСТАВЬ')>=0) throw new Error('токен GitHub не настроен на странице (GH_TOKEN_PARTS)');
+  const api='https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+'/contents/'+path;
+  const headers=ghHeaders();
+  // SHA нужен, чтобы обновить существующий файл; для нового его нет (404 — это норма)
+  let sha=null;
+  const gr=await fetch(api+'?ref='+GH_BRANCH,{headers,cache:'no-store'});
+  if(gr.ok){ sha=(await gr.json()).sha; }
+  else if(gr.status!==404){ throw new Error('не смог прочитать текущий файл: '+ghErrText(gr.status)); }
+  const body={message, content:contentB64, branch:GH_BRANCH};
+  if(sha) body.sha=sha;
+  const pr=await fetch(api,{method:'PUT',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!pr.ok) throw new Error(ghErrText(pr.status));
+  return pr.json();
+}
+/* base64 из utf-8 текста, порциями — чтобы не упереться в лимит аргументов при росте файла */
+function b64utf8(text){
+  const bytes=new TextEncoder().encode(text);
+  let s='';
+  for(let i=0;i<bytes.length;i+=0x8000) s+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));
+  return btoa(s);
+}
+function stamp(){ return new Date().toISOString().slice(0,16).replace('T',' '); }
+
 async function publish(){
   const btn=document.getElementById('ed-pub'); const orig=btn.textContent;
   btn.disabled=true; btn.textContent='Публикую…';
   try{
-    if(!GH_TOKEN || GH_TOKEN.indexOf('ВСТАВЬ')>=0) throw new Error('токен GitHub не настроен на странице (GH_TOKEN_PARTS)');
-    const api='https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+'/contents/'+GH_PATH;
-    const headers={'Authorization':'Bearer '+GH_TOKEN,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
-    // 1) достаём текущий SHA файла (нужен для обновления существующего файла)
-    let sha=null;
-    const gr=await fetch(api+'?ref='+GH_BRANCH,{headers,cache:'no-store'});
-    if(gr.ok){ const gj=await gr.json(); sha=gj.sha; }
-    else if(gr.status!==404){ throw new Error('не смог прочитать текущий файл (HTTP '+gr.status+')'); }
-    // 2) кодируем содержимое в base64 (utf-8 safe)
-    const text=JSON.stringify(pack(),null,2);
-    const b64=btoa(String.fromCharCode(...new TextEncoder().encode(text)));
-    // 3) коммитим
-    const body={message:'schedule: обновление '+new Date().toISOString().slice(0,16).replace('T',' '), content:b64, branch:GH_BRANCH};
-    if(sha) body.sha=sha;
-    const pr=await fetch(api,{method:'PUT',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(!pr.ok){
-      let msg='HTTP '+pr.status;
-      if(pr.status===401) msg='токен недействителен или отозван';
-      else if(pr.status===403) msg='нет доступа — проверь права токена (Contents: Read and write) или лимит запросов GitHub';
-      else if(pr.status===404) msg='репозиторий или файл не найден — проверь GH_OWNER/GH_REPO/GH_PATH';
-      else if(pr.status===409 || pr.status===422) msg='файл изменился с момента открытия страницы — обнови страницу и попробуй снова';
-      throw new Error(msg);
-    }
+    await ghPutFile(GH_PATH, b64utf8(JSON.stringify(pack(),null,2)), 'schedule: обновление '+stamp());
     btn.textContent='Опубликовано ✓ (обновится в течение нескольких минут)';
     try{ localStorage.removeItem('mbx_schedule'); }catch(e){}
     setTimeout(()=>{ btn.textContent=orig; btn.disabled=false; }, 3200);
@@ -452,6 +496,66 @@ async function publish(){
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='data.json'; a.click();
     btn.textContent=orig; btn.disabled=false;
   }
+}
+
+/* ==================== ЗАГРУЗКА ФОТО СПИКЕРА ==================== */
+const TRANSLIT={а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',
+  н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',ц:'c',ч:'ch',ш:'sh',щ:'sch',
+  ъ:'',ы:'y',ь:'',э:'e',ю:'yu',я:'ya'};
+/* Имя файла из фамилии: «Трофим Рудзий» → rudziy. В нижнем регистре, как большинство существующих. */
+function slugFromName(name){
+  const parts=String(name||'').trim().split(/\s+/).filter(Boolean);
+  const surname=parts.length>1?parts[parts.length-1]:(parts[0]||'');
+  return surname.toLowerCase().split('')
+    .map(ch=>TRANSLIT[ch]!==undefined?TRANSLIT[ch]:ch).join('')
+    .replace(/[^a-z0-9_-]/g,'');
+}
+/* Любое изображение → PNG S×S. Кадрируем так же, как потом обрежет CSS:
+   object-fit:cover + object-position:center top, то есть по центру по горизонтали и от верха. */
+function squarePngBase64(file,S){
+  return new Promise((resolve,reject)=>{
+    if(!file.type || file.type.indexOf('image/')!==0){ reject(new Error('это не изображение')); return; }
+    const url=URL.createObjectURL(file), img=new Image();
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      try{
+        const c=document.createElement('canvas'); c.width=S; c.height=S;
+        const ctx=c.getContext('2d');
+        const k=Math.max(S/img.naturalWidth, S/img.naturalHeight);
+        const w=img.naturalWidth*k, h=img.naturalHeight*k;
+        ctx.drawImage(img,(S-w)/2,0,w,h);
+        resolve(c.toDataURL('image/png').split(',')[1]);
+      }catch(e){ reject(e); }
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error('не смог прочитать изображение')); };
+    img.src=url;
+  });
+}
+async function onPickAvatar(which){
+  const inp=$('ed-sp'+which+'img'), st=$('ed-sp'+which+'st');
+  const file=inp.files && inp.files[0]; if(!file) return;
+  const slugField=$('ed-sp'+which+'f'), nameField=$('ed-sp'+which+'n');
+  const slug=slugOK(slugField.value.trim()) || slugFromName(nameField.value);
+  if(!slug){
+    st.className='up err'; st.textContent='сначала впиши имя спикера — имя файла сделаю из фамилии';
+    inp.value=''; return;
+  }
+  st.className='up'; st.textContent='загружаю '+slug+'.png…';
+  try{
+    const b64=await squarePngBase64(file,120);
+    await ghPutFile('assets/avatars/'+slug+'.png', b64, 'avatar: '+slug+' ('+stamp()+')');
+    slugField.value=slug;
+    st.className='up ok';
+    if($('ed-type').value){
+      applyPanel();
+      st.textContent='фото загружено ✓ — осталось нажать «Опубликовать»';
+    }else{
+      st.textContent='фото загружено ✓ — выбери тип дня и нажми «Применить»';
+    }
+  }catch(err){
+    console.warn('avatar upload failed:', err);
+    st.className='up err'; st.textContent='не вышло: '+err.message;
+  }finally{ inp.value=''; }
 }
 
 document.getElementById('stage').addEventListener('click',e=>{
@@ -474,6 +578,8 @@ $('ed-pass').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin();});
 $('ed-apply').addEventListener('click',applyPanel);
 $('ed-clear').addEventListener('click',clearDay);
 $('ed-pub').addEventListener('click',publish);
+$('ed-sp1img').addEventListener('change',()=>onPickAvatar(1));
+$('ed-sp2img').addEventListener('change',()=>onPickAvatar(2));
 $('ed-exit').addEventListener('click',exitEdit);
 $('ed-close').addEventListener('click',()=>{ $('ed-panel').classList.remove('on'); sel=null; });
 $('ed-type').addEventListener('change',()=>{
