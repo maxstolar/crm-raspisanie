@@ -514,7 +514,9 @@ function slugFromName(name){
    object-fit:cover + object-position:center top, то есть по центру по горизонтали и от верха. */
 function squarePngBase64(file,S){
   return new Promise((resolve,reject)=>{
-    if(!file.type || file.type.indexOf('image/')!==0){ reject(new Error('это не изображение')); return; }
+    // Пустой type бывает у нормальных картинок — пусть решает декодер, а не мы
+    if(file.type && file.type.indexOf('image/')!==0){ reject(new Error('это не изображение')); return; }
+    const heic=/\.(heic|heif)$/i.test(file.name||'') || /heic|heif/i.test(file.type||'');
     const url=URL.createObjectURL(file), img=new Image();
     img.onload=()=>{
       URL.revokeObjectURL(url);
@@ -527,7 +529,12 @@ function squarePngBase64(file,S){
         resolve(c.toDataURL('image/png').split(',')[1]);
       }catch(e){ reject(e); }
     };
-    img.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error('не смог прочитать изображение')); };
+    img.onerror=()=>{
+      URL.revokeObjectURL(url);
+      reject(new Error(heic
+        ? 'браузер не открывает HEIC — пересохрани фото в JPG или PNG (на айфоне: «Поделиться» → «Параметры» → «Совместимый»)'
+        : 'не смог прочитать файл — попробуй JPG или PNG'));
+    };
     img.src=url;
   });
 }
