@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Где править расписание</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ink:#292B32;
+    --ink-soft:#5A6270;
+    --ink-faint:#8A929E;
+    --ground:#F7F8FA;
+    --card:#FFFFFF;
+    --line:#DFE4EA;
+    --line-soft:#EDF0F4;
+    --green:#39AA5D;
+    --green-bg:#E8F4EC;
+    --amber:#C98A06;
+    --amber-bg:#FBF1DC;
+    --red:#D8302F;
+    --red-bg:#FBEBEB;
+    --code-bg:#F0F3F6;
+    --btn:#F0F3F6;
+    --btn-hover:#E3E8EE;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#E8EBEF;
+      --ink-soft:#A8B0BC;
+      --ink-faint:#79818E;
+      --ground:#16181C;
+      --card:#1E2126;
+      --line:#2E333A;
+      --line-soft:#25292F;
+      --green:#4FBE74;
+      --green-bg:#1B2A21;
+      --amber:#DDA82F;
+      --amber-bg:#2A2418;
+      --red:#EE6663;
+      --red-bg:#2B1D1E;
+      --code-bg:#252A31;
+      --btn:#2A2F36;
+      --btn-hover:#343A42;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#E8EBEF;
+    --ink-soft:#A8B0BC;
+    --ink-faint:#79818E;
+    --ground:#16181C;
+    --card:#1E2126;
+    --line:#2E333A;
+    --line-soft:#25292F;
+    --green:#4FBE74;
+    --green-bg:#1B2A21;
+    --amber:#DDA82F;
+    --amber-bg:#2A2418;
+    --red:#EE6663;
+    --red-bg:#2B1D1E;
+    --code-bg:#252A31;
+    --btn:#2A2F36;
+    --btn-hover:#343A42;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    font-size:16px;line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:800px;margin:0 auto;padding:48px 24px 80px;display:flex;flex-direction:column;gap:44px;}
+
+  h1{
+    font-family:'Golos Text','Inter',sans-serif;
+    font-size:40px;line-height:1.1;font-weight:600;letter-spacing:-0.02em;
+    text-wrap:balance;margin:0;
+  }
+  h2{
+    font-family:'Golos Text','Inter',sans-serif;
+    font-size:22px;line-height:1.25;font-weight:600;letter-spacing:-0.01em;
+    text-wrap:balance;margin:0;
+  }
+  h3{font-family:'Golos Text','Inter',sans-serif;font-size:18px;font-weight:600;margin:0;}
+  p{margin:0;max-width:65ch;}
+  .lede{font-size:17px;color:var(--ink-soft);max-width:62ch;}
+  .eyebrow{
+    font-size:12px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;
+    color:var(--ink-faint);
+  }
+  code{
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+    background:var(--code-bg);border-radius:5px;padding:2px 6px;font-size:0.86em;
+  }
+  a{color:var(--green);text-decoration-thickness:1px;text-underline-offset:2px;}
+  :focus-visible{outline:2px solid var(--green);outline-offset:3px;border-radius:4px;}
+
+  header{display:flex;flex-direction:column;gap:14px;}
+  .asof{
+    padding:13px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    font-size:13.5px;color:var(--ink-soft);
+  }
+  .asof b{color:var(--ink);font-weight:600;}
+
+  section{display:flex;flex-direction:column;gap:18px;}
+
+  /* Адрес потока. Левая полоса кодирует, кому можно давать ссылку. */
+  .addr{
+    /* minmax(0,1fr), а не 1fr: у 1fr автоминимум равен min-content, поэтому колонка
+       раздувалась под неразрывный адрес, а overflow:hidden это молча обрезал. */
+    display:grid;grid-template-columns:4px minmax(0,1fr);
+    background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  }
+  .addr .stripe{background:var(--green);}
+  .addr.internal .stripe{background:var(--amber);}
+  .addr .body{padding:18px 20px;display:flex;flex-direction:column;gap:16px;}
+  .addr .top{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px;}
+  .addr .top h3{margin-right:auto;}
+
+  .aud{
+    font-size:11.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;
+    border-radius:20px;padding:4px 10px;white-space:nowrap;
+    background:var(--green-bg);color:var(--green);
+  }
+  .addr.internal .aud{background:var(--amber-bg);color:var(--amber);}
+
+  .links{display:flex;flex-direction:column;gap:10px;}
+  .link{display:flex;flex-direction:column;gap:5px;}
+  .link .role{
+    font-size:11.5px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;
+    color:var(--ink-faint);
+  }
+  .urlrow{display:flex;align-items:stretch;gap:8px;}
+  .url{
+    flex:1;min-width:0;overflow-x:auto;white-space:nowrap;
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+    background:var(--code-bg);border-radius:7px;padding:10px 12px;
+    font-size:13.5px;color:var(--ink);
+  }
+  .url .q{color:var(--green);font-weight:500;}
+  .url .h{color:var(--amber);font-weight:500;}
+  .copy{
+    flex:none;border:1px solid var(--line);background:var(--btn);color:var(--ink-soft);
+    border-radius:7px;padding:0 14px;font:inherit;font-size:13px;font-weight:500;
+    cursor:pointer;white-space:nowrap;transition:background .12s,color .12s;
+  }
+  .copy:hover{background:var(--btn-hover);color:var(--ink);}
+  .copy.done{background:var(--green-bg);color:var(--green);border-color:transparent;}
+  .copy.fail{background:var(--red-bg);color:var(--red);border-color:transparent;}
+
+  .note{font-size:14.5px;color:var(--ink-soft);}
+  .note strong{color:var(--ink);font-weight:600;}
+
+  .check{
+    background:var(--amber-bg);border-radius:8px;padding:13px 15px;
+    font-size:14.5px;color:var(--ink);display:flex;flex-direction:column;gap:6px;
+  }
+  .check b{color:var(--amber);}
+  .warn{background:var(--red-bg);border-radius:8px;padding:12px 14px;font-size:14.5px;color:var(--ink);}
+  .warn b{color:var(--red);}
+
+  table{width:100%;border-collapse:collapse;font-size:14.5px;}
+  .scroll{overflow-x:auto;}
+  th{
+    text-align:left;font-weight:600;font-size:12px;letter-spacing:0.07em;text-transform:uppercase;
+    color:var(--ink-faint);padding:0 12px 8px 0;border-bottom:1px solid var(--line);
+  }
+  td{padding:11px 12px 11px 0;border-bottom:1px solid var(--line-soft);vertical-align:top;}
+  tr td:last-child,tr th:last-child{padding-right:0;}
+  td.who{white-space:nowrap;font-weight:500;}
+  .yes{color:var(--red);font-weight:600;}
+  .no{color:var(--ink-faint);}
+
+  ul{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:7px;max-width:65ch;}
+  li::marker{color:var(--ink-faint);}
+
+  footer{
+    border-top:1px solid var(--line);padding-top:20px;
+    font-size:13.5px;color:var(--ink-faint);display:flex;flex-direction:column;gap:8px;
+  }
+  @media (max-width: 560px){
+    .wrap{padding:28px 16px 56px;gap:32px;}
+    h1{font-size:30px;}
+    .lede{font-size:16px;}
+    .addr .body{padding:16px;}
+    /* Адрес не переносится, поэтому рядом с кнопкой от него остаётся щель.
+       На узком экране кнопка уходит под адрес и занимает всю ширину. */
+    .urlrow{flex-direction:column;}
+    .copy{padding:9px 14px;}
+    /* В узкой коробке адрес обрезался у края, и «смотреть» с «править» выглядели
+       одинаково: разница-то в хвосте #edit. Переносим адрес целиком. */
+    .url{white-space:normal;overflow-wrap:anywhere;overflow-x:visible;}
+    td,th{padding-right:10px;}
+
+    /* Таблица кнопок в три колонки на телефоне сжимается до пары слов в строке.
+       Раскладываем её списком: имя кнопки заголовком, а колонку «студенты увидят»
+       подписываем словами — шапку-то мы прячем. */
+    .wide thead{display:none;}
+    .wide table,.wide tbody,.wide tr,.wide td{display:block;width:100%;}
+    .wide tr{border-bottom:1px solid var(--line);padding:14px 0;}
+    .wide tr:last-child{border-bottom:0;}
+    .wide td{border:0;padding:0;}
+    .wide td.who{font-size:16px;font-weight:600;margin-bottom:3px;white-space:normal;}
+    .wide td:last-child{margin-top:5px;font-size:13.5px;}
+    .wide td:last-child::before{content:'Студенты увидят: ';color:var(--ink-faint);font-weight:400;}
+  }
+  @media (prefers-reduced-motion: reduce){*{transition:none !important;}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Школа CRM-маркетологов Mindbox</div>
+    <h1>Где править расписание</h1>
+    <p class="lede">Потоки живут на разных адресах, но страница у них одна. Что вы правите и кто
+      это увидит, зависит только от того, какой адрес открыт. Пароль редактора здесь намеренно
+      не напечатан: эта справка открыта всем, кто знает её адрес, — пароль спрашивайте
+      у владельца расписания. Защитой он всё равно не служит, его видно в исходниках
+      страницы; защита в том, что ссылку с <code>#edit</code> не раздают.</p>
+    <p class="lede"><strong>Номер в адресе — это адрес, а не номер потока.</strong> Первый
+      поток школы прошёл до появления этого инструмента, поэтому счёт адресов и счёт потоков
+      разошлись. Какой это поток, говорит подпись под заголовком — её задаёт редактор
+      кнопкой «переименовать».</p>
+    <div class="asof">Справка составлена <b>2 сентября 2026</b>. Адреса и кнопки с тех пор
+      не менялись, если никто не сообщал об обратном.</div>
+  </header>
+
+  <section>
+    <h2>Адреса</h2>
+
+    <div class="addr">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="top">
+          <h3>Основной адрес</h3>
+          <span class="aud">можно давать студентам</span>
+        </div>
+        <div class="links">
+          <div class="link">
+            <span class="role">смотреть</span>
+            <div class="urlrow">
+              <span class="url">https://mindbox.ru/storage/raspisanie-shkoly-crm/</span>
+              <button class="copy" type="button">Копировать</button>
+            </div>
+          </div>
+          <div class="link">
+            <span class="role">править</span>
+            <div class="urlrow">
+              <span class="url">https://mindbox.ru/storage/raspisanie-shkoly-crm/<span class="h">#edit</span></span>
+              <button class="copy" type="button">Копировать</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">Здесь лежит расписание потока, который учится сейчас. Ссылку без
+          <code>#edit</code> раздают студентам — редактор по ней не откроется.</p>
+        <div class="warn"><b>Осторожно:</b> это живое расписание. Всё, что здесь опубликовано,
+          через несколько минут видят студенты. Экспериментировать — в черновике.</div>
+      </div>
+    </div>
+
+    <div class="addr">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="top">
+          <h3>Второй адрес</h3>
+          <span class="aud">можно давать студентам</span>
+        </div>
+        <div class="links">
+          <div class="link">
+            <span class="role">смотреть</span>
+            <div class="urlrow">
+              <span class="url">https://mindbox.ru/storage/raspisanie-shkoly-crm/<span class="q">?stream=2</span></span>
+              <button class="copy" type="button">Копировать</button>
+            </div>
+          </div>
+          <div class="link">
+            <span class="role">править</span>
+            <div class="urlrow">
+              <span class="url">https://mindbox.ru/storage/raspisanie-shkoly-crm/<span class="q">?stream=2</span><span class="h">#edit</span></span>
+              <button class="copy" type="button">Копировать</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">Здесь собирают расписание следующего потока. Оно полностью независимо
+          от основного: свой файл, своя история версий, своя подпись. Оба живут параллельно —
+          когда текущий поток закончится, ничего переключать не нужно.</p>
+        <p class="note">Следующий адрес появится сам, без доработок: <code>?stream=3</code>.</p>
+        <p class="note">Назовите расписание кнопкой «переименовать» — например «Зимний поток
+          2027». Имена сезонные, без номеров: тогда не приходится помнить, какой поток по счёту
+          и на каком адресе он лежит. По этим именам расписания видны в списке при переносе.</p>
+        <div class="check">
+          <span><b>Проверьте перед первой правкой.</b> На этом адресе должно быть
+            <strong>пустое расписание</strong> — или то, что вы там уже собрали.</span>
+          <span>Войдите в редактор: под заголовком должна появиться подпись
+            <strong>«без названия · ?stream=2»</strong> либо имя, которое вы задали.
+            Подпись называет адрес — по ней и видно, что вы стоите на втором,
+            а не на основном.</span>
+          <span>Если подписи нет, а вместо пустого расписания видно расписание текущего
+            потока, ничего не публикуйте: обновите страницу и проверьте подпись ещё раз.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="addr internal">
+      <div class="stripe"></div>
+      <div class="body">
+        <div class="top">
+          <h3>Черновик</h3>
+          <span class="aud">только для редакторов</span>
+        </div>
+        <div class="links">
+          <div class="link">
+            <span class="role">смотреть</span>
+            <div class="urlrow">
+              <span class="url">https://mindbox.ru/storage/raspisanie-shkoly-crm/<span class="q">?test</span></span>
+              <button class="copy" type="button">Копировать</button>
+            </div>
+          </div>
+          <div class="link">
+            <span class="role">править</span>
+            <div class="urlrow">
+              <span class="url">https://mindbox.ru/storage/raspisanie-shkoly-crm/<span class="q">?test</span><span class="h">#edit</span></span>
+              <button class="copy" type="button">Копировать</button>
+            </div>
+          </div>
+        </div>
+        <p class="note">Отдельное расписание с жёлтой подписью «Черновик» под заголовком.
+          Здесь можно ломать что угодно: ни на одно расписание это не влияет, пока не нажать
+          «Залить в расписание…». Что в черновике сейчас — видно по ссылке.</p>
+        <p class="note">Ссылку студентам не дают. Но это договорённость, а не защита:
+          адрес ничем не закрыт, и кто его знает — увидит.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Что делают кнопки</h2>
+    <div class="scroll wide">
+      <table>
+        <thead>
+          <tr><th>Кнопка</th><th>Что делает</th><th>Студенты увидят</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="who">Применить</td>
+            <td>Сохраняет день в открытой странице. Никуда не отправляет.</td>
+            <td class="no">нет</td>
+          </tr>
+          <tr>
+            <td class="who">Опубликовать</td>
+            <td>Сохраняет расписание того адреса, на котором вы находитесь.</td>
+            <td class="yes">да, через минуты</td>
+          </tr>
+          <tr>
+            <td class="who">Вернуть опубликованное</td>
+            <td>Отменяет ваши правки и возвращает то, что сейчас на сайте.</td>
+            <td class="no">нет</td>
+          </tr>
+          <tr>
+            <td class="who">История</td>
+            <td>Список прошлых публикаций этого расписания. Выбранная версия загружается для просмотра.</td>
+            <td class="no">нет, пока не опубликуете</td>
+          </tr>
+          <tr>
+            <td class="who">Фото спикера</td>
+            <td>Обрезает любое фото в квадрат и кладёт в репозиторий сразу.</td>
+            <td class="yes">да, сразу</td>
+          </tr>
+          <tr>
+            <td class="who">Переименовать</td>
+            <td>Задаёт имя расписания — например «Зимний поток 2027». Оно же видно в списке при переносе.</td>
+            <td class="yes">да, после публикации</td>
+          </tr>
+          <tr>
+            <td class="who">Залить в расписание…</td>
+            <td>Показывает список расписаний с их именами и переносит черновик в выбранное, заменяя его целиком.</td>
+            <td class="yes">да, через минуты</td>
+          </tr>
+          <tr>
+            <td class="who">Взять из расписания…</td>
+            <td>Копирует выбранное расписание в черновик, чтобы править от готового.</td>
+            <td class="no">нет</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">«Опубликовать» всегда пишет туда, где вы стоите: на основном адресе — в его
+      расписание, на <code>?stream=2</code> — во второе, в черновике — в черновик. Перепутать
+      сложно: надпись на кнопке и подпись под заголовком меняются вместе с адресом.</p>
+  </section>
+
+  <section>
+    <h2>Через сколько видно правку</h2>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>Что изменили</th><th>Когда появится на сайте</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Занятие, месяц, имя расписания</td><td>несколько минут</td></tr>
+          <tr><td>Фото спикера</td><td>сразу</td></tr>
+          <tr><td>Саму страницу и её кнопки</td><td>до часа</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Разница в том, откуда что берётся. Расписание и фото страница читает
+      напрямую из репозитория, а сама страница попадает на сайт только с часовой
+      синхронизацией — поэтому новые кнопки всегда приезжают позже, чем новые данные.
+      Отсюда же и проверка второго адреса выше.</p>
+  </section>
+
+  <section>
+    <h2>Что стоит знать до того, как что-то нажать</h2>
+    <ul>
+      <li>Отменить публикацию можно: «История» на странице расписания показывает прошлые
+        версии с датами и возвращает любую.</li>
+      <li>Если двое правят одновременно, побеждает тот, кто опубликовал последним.
+        Договаривайтесь голосом — страница про это не знает.</li>
+      <li>Фото можно загружать любое: и портрет, и «ландшафт» обрежутся в квадрат сами.
+        Не открывается только HEIC с айфона — редактор попросит JPG или PNG.</li>
+      <li>Публикация перестанет работать <strong>15 января 2027</strong> — истекает токен
+        доступа. Кнопка честно скажет, что токен недействителен. Перевыпуск занимает пару
+        минут, но про дату лучше вспомнить заранее.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <span>Адрес этой справки: <code>https://mindbox.ru/storage/raspisanie-shkoly-crm/guide.html</code></span>
+    <span>Репозиторий: <code>maxstolar/crm-raspisanie</code> · Пароль редактора спрашивайте
+      у владельца расписания</span>
+    <span>В справке намеренно нет ничего, что зависит от «сегодня»: вместо этого —
+      проверки, которые можно сделать глазами на самой странице.</span>
+  </footer>
+
+</div>
+
+<script>
+  // Копирование: сначала современный буфер обмена, при отказе — старый способ через
+  // скрытое поле. Если не сработало и это, выделяем адрес, чтобы скопировать вручную.
+  function flash(btn, cls, text){
+    btn.textContent = text;
+    btn.classList.add(cls);
+    setTimeout(function(){ btn.textContent = 'Копировать'; btn.classList.remove(cls); }, 1900);
+  }
+  function legacyCopy(text){
+    try{
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-1000px';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand('copy');
+      ta.remove();
+      return ok;
+    }catch(e){ return false; }
+  }
+  function selectUrl(row){
+    try{
+      var range = document.createRange();
+      range.selectNodeContents(row.querySelector('.url'));
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }catch(e){}
+  }
+  document.querySelectorAll('.copy').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var row = btn.closest('.urlrow');
+      var text = row.querySelector('.url').textContent.trim();
+      var done = function(ok){
+        if(ok){ flash(btn, 'done', 'Скопировано'); }
+        else { flash(btn, 'fail', 'Выделено'); selectUrl(row); }
+      };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){ done(true); },
+                                                 function(){ done(legacyCopy(text)); });
+      } else {
+        done(legacyCopy(text));
+      }
+    });
+  });
+</script>
+</body>
+</html>
