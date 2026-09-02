@@ -140,6 +140,17 @@ body.editing .m-del{position:absolute;background:rgba(242,27,27,.08);border:1px 
   padding:6px 10px 7px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;
   transform-origin:top left;z-index:5;}
 body.editing .m-del:hover{background:rgba(242,27,27,.16);}
+/* Тестовый режим (?test в адресе): жёлтая плашка сверху, остальное съезжает под неё. */
+#test-bar{display:none;position:fixed;top:0;left:0;right:0;z-index:10000;background:#F2A81B;color:#292B32;
+  font-family:'CoFoSchedule','Inter',system-ui,sans-serif;font-size:14px;font-weight:500;
+  letter-spacing:.02em;padding:8px 16px;text-align:center;}
+body.testmode #test-bar{display:block;}
+body.testmode{padding-top:34px;}
+body.testmode #ed-bar{top:34px;}
+body.testmode.editing{padding-top:86px;}
+body.testmode #ed-panel{top:86px;}
+#ed-bar .promote{background:#F2A81B;color:#292B32;}
+#ed-bar .pull{background:#F0F3F6;color:#292B32;}
 #ed-panel input[type=file]{padding:7px 9px;font-size:13px;background:#F8FAFB;cursor:pointer;}
 #ed-panel .up{display:block;font-size:12px;line-height:1.35;color:#9AA1AB;min-height:16px;margin-top:4px;}
 #ed-panel .up.ok{color:#39AA5D;}
@@ -149,6 +160,7 @@ body.editing .m-del:hover{background:rgba(242,27,27,.16);}
 </head>
 <body>
 
+<div id="test-bar">ТЕСТОВАЯ КОПИЯ — это черновик следующего потока, студенты его не видят</div>
 <div class="page"><div class="stage" id="stage"></div></div>
 
 <!-- editor (dormant unless #edit + password) -->
@@ -162,6 +174,8 @@ body.editing .m-del:hover{background:rgba(242,27,27,.16);}
   <b>Режим редактирования</b>
   <button class="add" id="ed-add-month">+ Добавить месяц</button>
   <button class="add" id="ed-reset">Сбросить</button>
+  <button class="pull" id="ed-pull" hidden>Взять из основного</button>
+  <button class="promote" id="ed-promote" hidden>Залить в основное</button>
   <button class="pub" id="ed-pub">Опубликовать</button>
   <button class="exit" id="ed-exit">Выйти</button>
 </div>
@@ -239,10 +253,23 @@ function computeLayout(){
 const LOGO=`<svg viewBox="0 0 99 99" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect width="98.6586" height="98.6586" rx="18.4985" fill="#282A30"/> <path d="M26.9148 39.8604C27.4841 38.1053 28.4105 36.6097 29.704 35.3701C30.9942 34.1304 32.4932 33.2007 34.1943 32.5809C35.9493 31.9105 37.8088 31.5737 39.7693 31.5737C42.2485 31.5737 44.391 31.988 46.1965 32.8133C48.0021 33.6386 49.4472 34.7738 50.5319 36.2189C51.6165 37.6135 52.3374 39.1866 52.7012 40.9417H50.6868C51.2561 38.8767 52.2363 37.1487 53.6309 35.7541C55.076 34.3595 56.7536 33.3287 58.6636 32.655C60.5735 31.9307 62.561 31.5703 64.6259 31.5703C67.3612 31.5703 69.736 32.0857 71.7504 33.1199C73.7649 34.1001 75.311 35.5991 76.3957 37.6102C77.5309 39.5707 78.1002 41.9994 78.1002 44.8896V69.5138H70.4333V46.2101C70.4333 43.7847 69.7866 41.8478 68.4964 40.4027C67.2568 38.9576 65.2457 38.2333 62.4566 38.2333C59.9268 38.2333 57.7574 39.0586 55.9519 40.7126C54.1969 42.3127 53.3177 44.4551 53.3177 47.1398V69.5206H45.6508V46.2101C45.6508 43.8353 45.004 41.9253 43.7139 40.4802C42.4237 39.0351 40.3857 38.3108 37.5966 38.3108C35.0668 38.3108 32.8974 39.1125 31.0919 40.7126C29.3368 42.3127 28.4576 44.4551 28.4576 47.1398V69.5206H20.875V39.8604" fill="white"/> <path d="M23.1695 32.3516H14.9199V40.4563H23.1695V32.3516Z" fill="white"/> </svg>`;
 const CAM='<svg class="cam" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.6 5.6A1.9 1.9 0 0 1 3.5 3.7h5.9a1.9 1.9 0 0 1 1.9 1.9v6.8a1.9 1.9 0 0 1-1.9 1.9H3.5a1.9 1.9 0 0 1-1.9-1.9V5.6Z" fill="currentColor"/><path d="M11.9 7.9l3.2-2.1c.5-.35 1.2 0 1.2.6v5.2c0 .6-.7.95-1.2.6l-3.2-2.1V7.9Z" fill="currentColor"/></svg>';
 const EDIT_PASS='mbx-edit';
-const GH_OWNER='maxstolar', GH_REPO='crm-raspisanie', GH_BRANCH='main', GH_PATH='assets/data.json';
+const GH_OWNER='maxstolar', GH_REPO='crm-raspisanie', GH_BRANCH='main';
 /* База для чтения файлов репозитория напрямую, минуя часовую копию витрины. */
 const RAW_BASE='https://raw.githubusercontent.com/'+GH_OWNER+'/'+GH_REPO+'/'+GH_BRANCH+'/assets/';
-const RAW_URL=RAW_BASE+'data.json';
+/* Тестовый режим включается параметром ?test в адресе. Тестовое расписание лежит в отдельном
+   файле, основное не затрагивается. Вёрстка, редактор и загрузка фото — те же самые:
+   второй копии кода нет, поэтому тест и прод не могут разъехаться. */
+const TEST_MODE=new URLSearchParams(location.search).has('test');
+const GH_PATH_PROD='assets/data.json', GH_PATH_TEST='assets/data-test.json';
+const GH_PATH=TEST_MODE?GH_PATH_TEST:GH_PATH_PROD;
+/* Источники данных по порядку. В тесте, если своего файла ещё нет, отправной точкой служит
+   основное расписание — новый поток начинают с текущего, а не с пустого листа. */
+const DATA_SOURCES=TEST_MODE
+  ? [RAW_BASE+'data-test.json','data-test.json',RAW_BASE+'data.json','data.json']
+  : [RAW_BASE+'data.json','data.json'];
+/* Черновик в localStorage — свой на каждый режим, иначе правки из теста предложат
+   восстановить в основном расписании. */
+const WIP_KEY=TEST_MODE?'mbx_schedule_test':'mbx_schedule';
 /* Токен публикации в GitHub. Разбит на части не ради защиты (страница публичная, собрать
    его обратно может любой), а чтобы автоматические сканеры секретов — включая сканер
    самого GitHub, который отзывает найденные в публичных репозиториях токены — не
@@ -272,23 +299,26 @@ try{
   const initial=normalizeData(JSON.parse(document.getElementById('schedule-data').textContent));
   if(initial){ MONTHS=initial.months.slice(); DATA=initial.data; }
 }catch(e){}
-function applyFreshData(d){
-  const nd=normalizeData(d);
-  if(nd && nd.months.length){ MONTHS=nd.months.slice(); DATA=nd.data; render(); fit(); return true; }
-  return false;
+/* Читаем один файл расписания: сначала напрямую из GitHub (без часовой задержки витрины),
+   при неудаче — копию с витрины (страховка, если raw.githubusercontent.com недоступен). */
+async function fetchSchedule(url){
+  try{
+    const r=await fetch(url+'?ts='+Date.now(),{cache:'no-store'});
+    if(!r.ok) return null;
+    const d=await r.json();
+    return normalizeData(d);
+  }catch(e){ return null; }
 }
-/* Сначала пробуем данные напрямую из GitHub — без часовой задержки, с которой синхронизируется
-   витрина. Если raw.githubusercontent.com недоступен (CSP, сетевые ограничения), откатываемся
-   на копию витрины — она может отставать до часа, но всегда работает. */
-fetch(RAW_URL+'?ts='+Date.now(),{cache:'no-store'})
-  .then(r=>r.ok?r.json():Promise.reject(new Error('raw '+r.status)))
-  .then(d=>{ if(!applyFreshData(d)) throw new Error('raw: bad data'); })
-  .catch(()=>{
-    fetch('data.json?ts='+Date.now(),{cache:'no-store'})
-      .then(r=>r.ok?r.json():null)
-      .then(d=>applyFreshData(d))
-      .catch(()=>{});
-  });
+/* Идём по источникам сверху вниз и останавливаемся на первом, который дал годные данные.
+   Если не дал ни один — остаёмся на расписании, встроенном в страницу. */
+async function loadSchedule(){
+  for(const url of DATA_SOURCES){
+    const nd=await fetchSchedule(url);
+    if(nd && nd.months.length){ MONTHS=nd.months.slice(); DATA=nd.data; render(); fit(); return url; }
+  }
+  return null;
+}
+loadSchedule();
 
 const SHORT=new Set(['и','а','но','да','или','ни','ли','же','бы','во','к','ко','с','со','о','об','у','в','из','от','до','за','на','по','под','над','для','при','про','без','что','как','то','не','изо']);
 function typo(s){const p=String(s).split(' ');let o='';for(let i=0;i<p.length;i++){o+=p[i];if(i<p.length-1)o+=SHORT.has(p[i].toLowerCase().replace(/[«»(),.:;—-]/g,''))?'\u00A0':' ';}return o;}
@@ -386,7 +416,7 @@ function tryLogin(){
 function enterEdit(){
   editMode=true;
   try{
-    const wip=localStorage.getItem('mbx_schedule');
+    const wip=localStorage.getItem(WIP_KEY);
     if(wip){
       const parsed=JSON.parse(wip);
       const nd=normalizeData(parsed);
@@ -400,7 +430,7 @@ function enterEdit(){
   render(); fit();
 }
 function exitEdit(){ editMode=false; document.body.classList.remove('editing'); $('ed-bar').classList.remove('on'); $('ed-panel').classList.remove('on'); sel=null; }
-function saveWIP(){ try{localStorage.setItem('mbx_schedule',JSON.stringify({months:MONTHS,data:DATA}));}catch(e){} }
+function saveWIP(){ try{localStorage.setItem(WIP_KEY,JSON.stringify({months:MONTHS,data:DATA}));}catch(e){} }
 function pack(){ return {months:MONTHS,data:DATA}; }
 
 function openPanel(mName,d){
@@ -487,7 +517,7 @@ async function publish(){
   try{
     await ghPutFile(GH_PATH, b64utf8(JSON.stringify(pack(),null,2)), 'schedule: обновление '+stamp());
     btn.textContent='Опубликовано ✓ (обновится в течение нескольких минут)';
-    try{ localStorage.removeItem('mbx_schedule'); }catch(e){}
+    try{ localStorage.removeItem(WIP_KEY); }catch(e){}
     setTimeout(()=>{ btn.textContent=orig; btn.disabled=false; }, 3200);
   }catch(err){
     console.warn('github publish failed:', err);
@@ -496,6 +526,51 @@ async function publish(){
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='data.json'; a.click();
     btn.textContent=orig; btn.disabled=false;
   }
+}
+
+/* ==================== ПЕРЕНОС МЕЖДУ ТЕСТОМ И ОСНОВНЫМ ==================== */
+function countLessons(data){
+  let n=0; Object.values(data||{}).forEach(days=>{ n+=Object.keys(days||{}).length; });
+  return n;
+}
+/* Взять основное расписание в тест — чтобы править от текущего состояния.
+   Пишет только в страницу, в репозиторий ничего не уходит. */
+async function pullFromProd(){
+  if(!confirm('Заменить то, что сейчас на этой тестовой странице, основным расписанием?\n\n'
+    +'Несохранённые правки на странице пропадут. В основном расписании ничего не изменится.')) return;
+  const btn=$('ed-pull'), orig=btn.textContent;
+  btn.disabled=true; btn.textContent='Загружаю…';
+  try{
+    const nd=await fetchSchedule(RAW_BASE+'data.json') || await fetchSchedule('data.json');
+    if(!nd || !nd.months.length) throw new Error('не смог прочитать основное расписание');
+    MONTHS=nd.months.slice(); DATA=nd.data;
+    saveWIP(); render(); fit();
+    btn.textContent='Взято из основного ✓';
+  }catch(err){
+    console.warn('pull failed:', err);
+    alert('Не получилось взять основное расписание:\n'+err.message);
+  }
+  setTimeout(()=>{ btn.textContent=orig; btn.disabled=false; }, 2500);
+}
+/* Залить то, что на тестовой странице, в основное расписание — то самое «по кнопке». */
+async function promoteToProd(){
+  const d=pack();
+  if(!confirm('Залить это расписание в основное?\n\n'
+    +'Месяцев: '+d.months.length+', занятий: '+countLessons(d.data)+'\n'
+    +'Месяцы: '+d.months.map(m=>m.name).join(', ')+'\n\n'
+    +'Студенты увидят его на сайте через несколько минут.\n'
+    +'Откатить можно только через git revert в репозитории.')) return;
+  const btn=$('ed-promote'), orig=btn.textContent;
+  btn.disabled=true; btn.textContent='Заливаю…';
+  try{
+    await ghPutFile(GH_PATH_PROD, b64utf8(JSON.stringify(d,null,2)),
+      'schedule: залито из теста '+stamp());
+    btn.textContent='Залито в основное ✓';
+  }catch(err){
+    console.warn('promote failed:', err);
+    alert('Не получилось залить в основное:\n'+err.message);
+  }
+  setTimeout(()=>{ btn.textContent=orig; btn.disabled=false; }, 3200);
 }
 
 /* ==================== ЗАГРУЗКА ФОТО СПИКЕРА ==================== */
@@ -614,6 +689,14 @@ $('ed-reset').addEventListener('click',()=>{
   }catch(e){ MONTHS=JSON.parse(JSON.stringify(MONTHS_DEFAULT)); DATA={}; }
   saveWIP(); render(); fit();
 });
+/* Включение тестового режима: плашка сверху, свои кнопки переноса, другой текст на «Опубликовать». */
+if(TEST_MODE){
+  document.body.classList.add('testmode');
+  document.title='ТЕСТ — '+document.title;
+  $('ed-pub').textContent='Опубликовать в тест';
+  $('ed-pull').hidden=false;    $('ed-pull').addEventListener('click',pullFromProd);
+  $('ed-promote').hidden=false; $('ed-promote').addEventListener('click',promoteToProd);
+}
 function checkHash(){ if((location.hash||'').toLowerCase().indexOf('edit')>=0 && !editMode) openGate(); }
 window.addEventListener('hashchange',checkHash); checkHash();
 
