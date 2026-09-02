@@ -140,6 +140,9 @@ body.editing .m-del{position:absolute;background:rgba(242,27,27,.08);border:1px 
   padding:6px 10px 7px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;
   transform-origin:top left;z-index:5;}
 body.editing .m-del:hover{background:rgba(242,27,27,.16);}
+/* Подсказка на месте расписания, когда месяцев нет (чистый тест). */
+.empty{position:absolute;left:54px;top:546px;max-width:1200px;color:#9AA1AB;
+  font-family:'CoFoSchedule','Inter',system-ui,sans-serif;font-size:28px;line-height:1.4;font-weight:500;}
 /* Тестовый режим (?test в адресе): жёлтая плашка сверху, остальное съезжает под неё. */
 #test-bar{display:none;position:fixed;top:0;left:0;right:0;z-index:10000;background:#F2A81B;color:#292B32;
   font-family:'CoFoSchedule','Inter',system-ui,sans-serif;font-size:14px;font-weight:500;
@@ -248,7 +251,8 @@ function computeLayout(){
     m.nrows=nrows;
     y=m.row0+(nrows-1)*ROWSTEP+CELL_H+MONTH_GAP;
   });
-  window.STAGE_H=Math.max(2000, y-MONTH_GAP+80);
+  /* Пустое расписание (чистый тест) не нужно растягивать на два экрана впустую. */
+  window.STAGE_H=MONTHS.length ? Math.max(2000, y-MONTH_GAP+80) : 900;
 }
 const LOGO=`<svg viewBox="0 0 99 99" fill="none" xmlns="http://www.w3.org/2000/svg"> <rect width="98.6586" height="98.6586" rx="18.4985" fill="#282A30"/> <path d="M26.9148 39.8604C27.4841 38.1053 28.4105 36.6097 29.704 35.3701C30.9942 34.1304 32.4932 33.2007 34.1943 32.5809C35.9493 31.9105 37.8088 31.5737 39.7693 31.5737C42.2485 31.5737 44.391 31.988 46.1965 32.8133C48.0021 33.6386 49.4472 34.7738 50.5319 36.2189C51.6165 37.6135 52.3374 39.1866 52.7012 40.9417H50.6868C51.2561 38.8767 52.2363 37.1487 53.6309 35.7541C55.076 34.3595 56.7536 33.3287 58.6636 32.655C60.5735 31.9307 62.561 31.5703 64.6259 31.5703C67.3612 31.5703 69.736 32.0857 71.7504 33.1199C73.7649 34.1001 75.311 35.5991 76.3957 37.6102C77.5309 39.5707 78.1002 41.9994 78.1002 44.8896V69.5138H70.4333V46.2101C70.4333 43.7847 69.7866 41.8478 68.4964 40.4027C67.2568 38.9576 65.2457 38.2333 62.4566 38.2333C59.9268 38.2333 57.7574 39.0586 55.9519 40.7126C54.1969 42.3127 53.3177 44.4551 53.3177 47.1398V69.5206H45.6508V46.2101C45.6508 43.8353 45.004 41.9253 43.7139 40.4802C42.4237 39.0351 40.3857 38.3108 37.5966 38.3108C35.0668 38.3108 32.8974 39.1125 31.0919 40.7126C29.3368 42.3127 28.4576 44.4551 28.4576 47.1398V69.5206H20.875V39.8604" fill="white"/> <path d="M23.1695 32.3516H14.9199V40.4563H23.1695V32.3516Z" fill="white"/> </svg>`;
 const CAM='<svg class="cam" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1.6 5.6A1.9 1.9 0 0 1 3.5 3.7h5.9a1.9 1.9 0 0 1 1.9 1.9v6.8a1.9 1.9 0 0 1-1.9 1.9H3.5a1.9 1.9 0 0 1-1.9-1.9V5.6Z" fill="currentColor"/><path d="M11.9 7.9l3.2-2.1c.5-.35 1.2 0 1.2.6v5.2c0 .6-.7.95-1.2.6l-3.2-2.1V7.9Z" fill="currentColor"/></svg>';
@@ -262,10 +266,11 @@ const RAW_BASE='https://raw.githubusercontent.com/'+GH_OWNER+'/'+GH_REPO+'/'+GH_
 const TEST_MODE=new URLSearchParams(location.search).has('test');
 const GH_PATH_PROD='assets/data.json', GH_PATH_TEST='assets/data-test.json';
 const GH_PATH=TEST_MODE?GH_PATH_TEST:GH_PATH_PROD;
-/* Источники данных по порядку. В тесте, если своего файла ещё нет, отправной точкой служит
-   основное расписание — новый поток начинают с текущего, а не с пустого листа. */
+/* Источники данных по порядку. Тест читает только свой файл: подмешивать основное
+   расписание нельзя, иначе чистый лист превратится в копию текущего потока.
+   Если своего файла ещё нет, тест открывается пустым — месяцы добавляет редактор. */
 const DATA_SOURCES=TEST_MODE
-  ? [RAW_BASE+'data-test.json','data-test.json',RAW_BASE+'data.json','data.json']
+  ? [RAW_BASE+'data-test.json','data-test.json']
   : [RAW_BASE+'data.json','data.json'];
 /* Черновик в localStorage — свой на каждый режим, иначе правки из теста предложат
    восстановить в основном расписании. */
@@ -295,10 +300,19 @@ function normalizeData(d){
   return null;
 }
 let DATA={};
-try{
-  const initial=normalizeData(JSON.parse(document.getElementById('schedule-data').textContent));
+/* Вшитое в страницу расписание — запасной вариант для основного режима. Тест начинается
+   с чистого листа: месяцы под новый поток редактор добавляет сам, а если нужно взять
+   за основу текущее расписание — для этого есть кнопка «Взять из основного». */
+function builtInSchedule(){
+  try{ return normalizeData(JSON.parse(document.getElementById('schedule-data').textContent)); }
+  catch(e){ return null; }
+}
+if(TEST_MODE){
+  MONTHS=[]; DATA={};
+}else{
+  const initial=builtInSchedule();
   if(initial){ MONTHS=initial.months.slice(); DATA=initial.data; }
-}catch(e){}
+}
 /* Читаем один файл расписания: сначала напрямую из GitHub (без часовой задержки витрины),
    при неудаче — копию с витрины (страховка, если raw.githubusercontent.com недоступен). */
 async function fetchSchedule(url){
@@ -384,6 +398,11 @@ function render(){
   computeLayout();
   let html='<div class="h-title"><p>Расписание школы CRM‑маркетологов</p><p>Mindbox</p></div>';
   html+='<div class="h-logo">'+LOGO+'</div>';
+  if(!MONTHS.length){
+    html+='<div class="empty">'+(editMode
+      ? 'Пусто. Нажмите «+ Добавить месяц» вверху, чтобы собрать расписание нового потока,<br>или «Взять из основного», чтобы начать с текущего.'
+      : 'Расписание пока не заполнено.')+'</div>';
+  }
   MONTHS.forEach(m=>{
     html+='<div class="m-label" style="top:'+m.labelY+'px">'+m.name+'</div>';
     if(editMode) html+='<button class="m-del" data-m="'+m.name+'" style="left:'+(60+/*label width approx*/  ( (m.name.length)*54 + 20 ))+'px;top:'+(m.labelY+LABEL_H/2)+'px;transform:translateY(-50%) scale(1.11);transform-origin:top left">удалить месяц</button>';
@@ -555,6 +574,13 @@ async function pullFromProd(){
 /* Залить то, что на тестовой странице, в основное расписание — то самое «по кнопке». */
 async function promoteToProd(){
   const d=pack();
+  /* Пустой тест — это состояние по умолчанию, а не результат работы. Заливать его
+     в основное значит стереть живое расписание, чего никто не хочет специально. */
+  if(!d.months.length){
+    alert('Тестовое расписание пустое — заливать нечего.\n\n'
+      +'Добавьте месяцы и занятия, либо нажмите «Взять из основного», если хотели начать с текущего расписания.');
+    return;
+  }
   if(!confirm('Залить это расписание в основное?\n\n'
     +'Месяцев: '+d.months.length+', занятий: '+countLessons(d.data)+'\n'
     +'Месяцы: '+d.months.map(m=>m.name).join(', ')+'\n\n'
@@ -682,11 +708,19 @@ $('ed-add-month').addEventListener('click',()=>{
   window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
 });
 $('ed-reset').addEventListener('click',()=>{
-  if(!confirm('Сбросить всё к исходному расписанию школы (сентябрь–декабрь)? Твои правки на этой странице пропадут (пока не нажмёшь «Опубликовать» — на сервере ничего не изменится).')) return;
-  try{
-    const initial=normalizeData(JSON.parse(document.getElementById('schedule-data').textContent));
+  /* В тесте «сбросить» — это очистить всё до пустого листа. В основном режиме —
+     вернуться к расписанию, вшитому в страницу. */
+  const msg=TEST_MODE
+    ? 'Очистить тестовое расписание полностью? Все месяцы и занятия на этой странице пропадут (пока не нажмёшь «Опубликовать в тест» — в репозитории ничего не изменится).'
+    : 'Сбросить всё к исходному расписанию школы (сентябрь–декабрь)? Твои правки на этой странице пропадут (пока не нажмёшь «Опубликовать» — на сервере ничего не изменится).';
+  if(!confirm(msg)) return;
+  if(TEST_MODE){
+    MONTHS=[]; DATA={};
+  }else{
+    const initial=builtInSchedule();
     if(initial){ MONTHS=initial.months.slice(); DATA=JSON.parse(JSON.stringify(initial.data)); }
-  }catch(e){ MONTHS=JSON.parse(JSON.stringify(MONTHS_DEFAULT)); DATA={}; }
+    else{ MONTHS=JSON.parse(JSON.stringify(MONTHS_DEFAULT)); DATA={}; }
+  }
   saveWIP(); render(); fit();
 });
 /* Включение тестового режима: плашка сверху, свои кнопки переноса, другой текст на «Опубликовать». */
