@@ -165,18 +165,18 @@ body.editing .m-del:hover{background:rgba(242,27,27,.16);}
 /* Подсказка на месте расписания, когда месяцев нет (чистый тест). */
 .empty{position:absolute;left:54px;top:546px;max-width:1200px;color:#9AA1AB;
   font-family:'CoFoSchedule','Inter',system-ui,sans-serif;font-size:28px;line-height:1.4;font-weight:500;}
-/* Плашка сверху: спокойная — для второго и следующих потоков («Поток 2»), жёлтая —
-   для черновика. На основном адресе плашки нет, страница выглядит как раньше.
-   Когда плашка есть, всё остальное съезжает под неё. */
-#mode-bar{display:none;position:fixed;top:0;left:0;right:0;z-index:10000;background:#E7EBEF;color:#4A5260;
-  font-family:'CoFoSchedule','Inter',system-ui,sans-serif;font-size:14px;font-weight:500;
-  letter-spacing:.02em;padding:8px 16px;text-align:center;}
-#mode-bar.draft{background:#F2A81B;color:#292B32;}
-body.modebar #mode-bar{display:block;}
-body.modebar{padding-top:34px;}
-body.modebar #ed-bar{top:34px;}
-body.modebar.editing{padding-top:86px;}
-body.modebar #ed-panel{top:86px;}
+/* Подпись расписания — под заголовком, в том зазоре, что и так пустует.
+   Сама подпись не кнопка: её нельзя нажать, это просто ярлык. Рядом с ней в режиме
+   редактирования появляется «переименовать» — в той же манере, что «удалить месяц». */
+.s-row{position:absolute;left:54px;top:424px;display:flex;align-items:center;gap:12px;z-index:5;}
+.s-chip{background:#EEF1F5;color:#4A5260;border-radius:12px;padding:9px 18px 11px;
+  font-family:'CoFoSchedule','Inter',system-ui,sans-serif;font-size:30px;line-height:1;
+  font-weight:500;font-variation-settings:'wght' 500,'slnt' 0;white-space:nowrap;pointer-events:none;}
+.s-chip.draft{background:#FDF0D5;color:#8A6206;}
+.s-chip.unnamed{background:transparent;color:#C3C9D0;padding-left:0;padding-right:0;}
+.s-rename{background:#F0F3F6;border:1px solid #D5DBE1;color:#4A5260;padding:6px 10px 7px;
+  border-radius:8px;font-size:16px;font-weight:500;cursor:pointer;font-family:inherit;}
+.s-rename:hover{background:#E7EBEF;}
 #ed-bar .promote{background:#F2A81B;color:#292B32;}
 #ed-bar .pull{background:#F0F3F6;color:#292B32;}
 #ed-panel input[type=file]{padding:7px 9px;font-size:13px;background:#F8FAFB;cursor:pointer;}
@@ -188,7 +188,6 @@ body.modebar #ed-panel{top:86px;}
 </head>
 <body>
 
-<div id="mode-bar"></div>
 <div class="page"><div class="stage" id="stage"></div></div>
 
 <!-- editor (dormant unless #edit + password) -->
@@ -329,7 +328,10 @@ const GH_TOKEN=GH_TOKEN_PARTS.join('');
 
 function normalizeData(d){
   if(!d||typeof d!=='object') return null;
-  if(Array.isArray(d.months) && d.data) return {months:d.months, data:d.data};
+  /* Название расписания задаёт редактор, оно едет вместе с данными: собрали черновик
+     под именем «Осенний поток» — залили в поток, имя приехало с ним. */
+  const title=typeof d.title==='string'?d.title.trim():'';
+  if(Array.isArray(d.months) && d.data) return {months:d.months, data:d.data, title};
   // legacy shape: {"Сентябрь":{"1":{...}},...}
   const monthKeys=Object.keys(d).filter(k=>MONTH_NAMES.includes(k));
   if(monthKeys.length){
@@ -337,11 +339,14 @@ function normalizeData(d){
     monthKeys.forEach(k=>out.data[k]=d[k]);
     // months order = MONTHS_DEFAULT order intersected with present keys, then any others
     MONTHS_DEFAULT.forEach(m=>{ if(monthKeys.includes(m.name)) out.months.push({name:m.name,ndays:m.ndays,c1:m.c1}); });
+    out.title=title;
     return out;
   }
   return null;
 }
 let DATA={};
+/* Название этого расписания. Пустое — подпись берётся по умолчанию из номера потока. */
+let TITLE='';
 /* Состояние загрузки — от него зависит, что написать на месте пустого расписания.
    «Не удалось загрузить» и «расписание ещё не собрали» — разные сообщения. */
 let LOAD_STATE='loading';   // loading | ok | empty | failed
@@ -378,7 +383,7 @@ async function loadSchedule(){
     if(!res) continue;                       // сеть не ответила — пробуем следующий источник
     answered=true;                           // «файла нет» — тоже ответ, а не сбой
     if(res.nd && res.nd.months.length){
-      MONTHS=res.nd.months.slice(); DATA=res.nd.data;
+      MONTHS=res.nd.months.slice(); DATA=res.nd.data; TITLE=res.nd.title||'';
       LOAD_STATE='ok'; render(); fit();
       return url;
     }
@@ -455,6 +460,16 @@ function dotsBG(){
   document.documentElement.style.setProperty('--dots','url("data:image/svg+xml,'+encodeURIComponent(svg)+'")');
 }
 
+function esc(s){
+  return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+/* Подпись рядом с заголовком: то, что задал редактор, иначе номер потока.
+   У потока 1 без названия подписи нет — основной адрес выглядит как раньше. */
+function streamLabel(){
+  if(TEST_MODE) return 'Черновик'+(TITLE?' · '+TITLE:'');
+  if(TITLE) return TITLE;
+  return STREAM>1?'Поток '+STREAM:'';
+}
 /* Что написать вместо расписания, когда месяцев нет. Сбой загрузки и пустой черновик
    выглядят одинаково, но означают разное, поэтому и сообщения разные. */
 function emptyText(){
@@ -469,6 +484,14 @@ function render(){
   computeLayout();
   let html='<div class="h-title"><p>Расписание школы CRM‑маркетологов</p><p>Mindbox</p></div>';
   html+='<div class="h-logo">'+LOGO+'</div>';
+  const label=streamLabel();
+  if(label || editMode){
+    html+='<div class="s-row">'
+      +'<div class="s-chip'+(TEST_MODE?' draft':'')+(label?'':' unnamed')+'">'
+      +esc(label||'без названия')+'</div>'
+      +(editMode?'<button class="s-rename">переименовать</button>':'')
+      +'</div>';
+  }
   if(!MONTHS.length) html+='<div class="empty">'+emptyText()+'</div>';
   MONTHS.forEach(m=>{
     html+='<div class="m-label" style="top:'+m.labelY+'px">'+m.name+'</div>';
@@ -507,7 +530,7 @@ function enterEdit(){
       const parsed=JSON.parse(wip);
       const nd=normalizeData(parsed);
       if(nd && confirm('Восстановить несохранённые правки из прошлой сессии?')){
-        MONTHS=nd.months.slice(); DATA=nd.data;
+        MONTHS=nd.months.slice(); DATA=nd.data; TITLE=nd.title||'';
       }
     }
   }catch(e){}
@@ -516,8 +539,12 @@ function enterEdit(){
   render(); fit();
 }
 function exitEdit(){ editMode=false; document.body.classList.remove('editing'); $('ed-bar').classList.remove('on'); $('ed-panel').classList.remove('on'); sel=null; }
-function saveWIP(){ try{localStorage.setItem(WIP_KEY,JSON.stringify({months:MONTHS,data:DATA}));}catch(e){} }
-function pack(){ return {months:MONTHS,data:DATA}; }
+function saveWIP(){ try{localStorage.setItem(WIP_KEY,JSON.stringify(pack()));}catch(e){} }
+function pack(){
+  const o={months:MONTHS,data:DATA};
+  if(TITLE) o.title=TITLE;      // пустое не пишем, чтобы не мусорить в файле
+  return o;
+}
 
 function openPanel(mName,d){
   sel={m:mName,d:String(d)};
@@ -666,6 +693,20 @@ async function publish(){
   }
 }
 
+/* Переименование расписания. Меняется только подпись рядом с заголовком; какой файл
+   читается и пишется, решает адрес (?stream=N), и переименование его не двигает —
+   иначе редактор случайно «переехал» бы в другой поток и потерял расписание. */
+function renameStream(){
+  const cur=TITLE || (TEST_MODE?'':(STREAM>1?'Поток '+STREAM:''));
+  const v=prompt('Как называется это расписание?\n\n'
+    +'Подпись показывается рядом с заголовком — например «Поток 2» или «Осенний поток 2026».\n'
+    +'Пустое поле вернёт подпись по умолчанию.\n\n'
+    +'Название хранится вместе с расписанием, поэтому попадёт на сайт после публикации.', cur);
+  if(v===null) return;
+  TITLE=String(v).trim();
+  saveWIP(); render(); fit();
+}
+
 /* ==================== ИСТОРИЯ ПУБЛИКАЦИЙ ==================== */
 /* Каждый клик по «Опубликовать» — отдельный коммит data.json, поэтому «шаг назад»
    почти всегда означает «то же расписание без одной исправленной опечатки».
@@ -714,7 +755,7 @@ async function loadVersion(i){
     let head=null;
     try{ head=(await ghGet('/contents/'+GH_PATH+'?ref='+GH_BRANCH)).sha; }catch(e){}
     HIST_BASE_SHA=head;
-    MONTHS=nd.months.slice(); DATA=nd.data;
+    MONTHS=nd.months.slice(); DATA=nd.data; TITLE=nd.title||'';
     LOAD_STATE='ok';
     saveWIP(); render(); fit();
     $('ed-hist').classList.remove('on');
@@ -755,7 +796,7 @@ async function pullFromStream(){
   try{
     const nd=await fetchStreamSchedule(n);
     if(!nd || !nd.months.length) throw new Error('в потоке '+n+' пока нет расписания');
-    MONTHS=nd.months.slice(); DATA=nd.data;
+    MONTHS=nd.months.slice(); DATA=nd.data; TITLE=nd.title||'';
     LOAD_STATE='ok';
     saveWIP(); render(); fit();
     btn.textContent='Взято из потока '+n+' ✓';
@@ -864,6 +905,7 @@ async function onPickAvatar(which){
 
 document.getElementById('stage').addEventListener('click',e=>{
   if(!editMode) return;
+  if(e.target.closest('.s-rename')){ renameStream(); return; }
   const del=e.target.closest('.m-del');
   if(del){
     const name=del.getAttribute('data-m');
@@ -910,7 +952,7 @@ $('ed-reset').addEventListener('click',async ()=>{
      2026 навсегда, независимо от того, какой поток идёт. */
   if(TEST_MODE){
     if(!confirm('Очистить тестовое расписание полностью? Все месяцы и занятия на этой странице пропадут (пока не нажмёшь «Опубликовать в тест» — в репозитории ничего не изменится).')) return;
-    MONTHS=[]; DATA={};
+    MONTHS=[]; DATA={}; TITLE='';
     LOAD_STATE='empty';
     saveWIP(); render(); fit();
     return;
@@ -921,7 +963,7 @@ $('ed-reset').addEventListener('click',async ()=>{
   btn.disabled=true; btn.textContent='Загружаю…';
   const nd=await fetchStreamSchedule(STREAM);
   if(nd && nd.months.length){
-    MONTHS=nd.months.slice(); DATA=nd.data;
+    MONTHS=nd.months.slice(); DATA=nd.data; TITLE=nd.title||'';
     LOAD_STATE='ok'; HIST_BASE_SHA=null;
     saveWIP(); render(); fit();
   }else{
@@ -941,11 +983,9 @@ $('ed-hist').addEventListener('click',e=>{
   if(row) loadVersion(parseInt(row.getAttribute('data-i'),10));
 });
 
-/* Режимы отличаются плашкой, набором кнопок и надписями на них. */
+/* Режимы отличаются набором кнопок и надписями на них. Где мы находимся, видно
+   по подписи под заголовком и по заголовку вкладки. */
 if(TEST_MODE){
-  document.body.classList.add('modebar');
-  $('mode-bar').className='draft';
-  $('mode-bar').textContent='ЧЕРНОВИК — здесь собирают расписание перед заливкой в поток, студентам эту ссылку не дают';
   document.title='ЧЕРНОВИК — '+document.title;
   $('ed-pub').textContent='Сохранить черновик';
   $('ed-reset').textContent='Очистить';
@@ -954,12 +994,7 @@ if(TEST_MODE){
   $('ed-pull').hidden=false;    $('ed-pull').addEventListener('click',pullFromStream);
   $('ed-promote').hidden=false; $('ed-promote').addEventListener('click',promoteToStream);
 }else{
-  /* Поток 1 живёт на основном адресе и выглядит как раньше, без плашки. */
-  if(STREAM>1){
-    document.body.classList.add('modebar');
-    $('mode-bar').textContent='Поток '+STREAM;
-    document.title='Поток '+STREAM+' — '+document.title;
-  }
+  if(STREAM>1) document.title='Поток '+STREAM+' — '+document.title;
   $('ed-reset').textContent='Вернуть опубликованное';
   $('ed-history').hidden=false;
 }
