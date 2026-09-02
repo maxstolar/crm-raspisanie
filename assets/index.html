@@ -345,8 +345,10 @@ function normalizeData(d){
   return null;
 }
 let DATA={};
-/* Название этого расписания. Пустое — подпись берётся по умолчанию из номера потока. */
+/* Название этого расписания. Пустое — подписи нет: номер из адреса подставлять нельзя,
+   он говорит лишь о том, в каком файле лежат данные. */
 let TITLE='';
+const BASE_TITLE=document.title;
 /* Состояние загрузки — от него зависит, что написать на месте пустого расписания.
    «Не удалось загрузить» и «расписание ещё не собрали» — разные сообщения. */
 let LOAD_STATE='loading';   // loading | ok | empty | failed
@@ -463,12 +465,24 @@ function dotsBG(){
 function esc(s){
   return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 }
-/* Подпись рядом с заголовком: то, что задал редактор, иначе номер потока.
-   У потока 1 без названия подписи нет — основной адрес выглядит как раньше. */
+/* Как называется адрес — это факт о том, где лежит файл, и только для редактора.
+   Номер из адреса нельзя выдавать за номер потока: первый поток школы прошёл без
+   расписания, поэтому счёт адресов и счёт потоков разошлись и совпадать не обязаны. */
+function addressLabel(){
+  if(TEST_MODE) return 'черновик';
+  return STREAM>1?'?stream='+STREAM:'основной адрес';
+}
+/* Подпись рядом с заголовком — только то, что задал редактор. Пусто значит пусто:
+   выдумывать номер потока страница не имеет права. */
 function streamLabel(){
   if(TEST_MODE) return 'Черновик'+(TITLE?' · '+TITLE:'');
-  if(TITLE) return TITLE;
-  return STREAM>1?'Поток '+STREAM:'';
+  return TITLE;
+}
+/* Заголовок вкладки собираем из названия, а не из адреса. Название приходит вместе
+   с данными, поэтому вызывается из render, а не один раз при загрузке. */
+function syncTabTitle(){
+  const pre=TEST_MODE?'ЧЕРНОВИК':TITLE;
+  document.title=pre?pre+' — '+BASE_TITLE:BASE_TITLE;
 }
 /* Что написать вместо расписания, когда месяцев нет. Сбой загрузки и пустой черновик
    выглядят одинаково, но означают разное, поэтому и сообщения разные. */
@@ -482,13 +496,14 @@ function emptyText(){
 }
 function render(){
   computeLayout();
+  syncTabTitle();
   let html='<div class="h-title"><p>Расписание школы CRM‑маркетологов</p><p>Mindbox</p></div>';
   html+='<div class="h-logo">'+LOGO+'</div>';
   const label=streamLabel();
   if(label || editMode){
     html+='<div class="s-row">'
       +'<div class="s-chip'+(TEST_MODE?' draft':'')+(label?'':' unnamed')+'">'
-      +esc(label||'без названия')+'</div>'
+      +esc(label||'без названия · '+addressLabel())+'</div>'
       +(editMode?'<button class="s-rename">переименовать</button>':'')
       +'</div>';
   }
@@ -697,11 +712,10 @@ async function publish(){
    читается и пишется, решает адрес (?stream=N), и переименование его не двигает —
    иначе редактор случайно «переехал» бы в другой поток и потерял расписание. */
 function renameStream(){
-  const cur=TITLE || (TEST_MODE?'':(STREAM>1?'Поток '+STREAM:''));
   const v=prompt('Как называется это расписание?\n\n'
-    +'Подпись показывается рядом с заголовком — например «Поток 2» или «Осенний поток 2026».\n'
-    +'Пустое поле вернёт подпись по умолчанию.\n\n'
-    +'Название хранится вместе с расписанием, поэтому попадёт на сайт после публикации.', cur);
+    +'Подпись показывается рядом с заголовком — например «Осенний поток 2026».\n'
+    +'По названиям расписания видны в списке при переносе, так что имя стоит задать.\n\n'
+    +'Пустое поле уберёт подпись. Название попадёт на сайт после публикации.', TITLE);
   if(v===null) return;
   TITLE=String(v).trim();
   saveWIP(); render(); fit();
@@ -773,36 +787,82 @@ function countLessons(data){
   let n=0; Object.values(data||{}).forEach(days=>{ n+=Object.keys(days||{}).length; });
   return n;
 }
-/* Спрашиваем номер потока. Потоки независимы, поэтому «залить» и «взять» всегда
-   требуют явно назвать, о каком речь: молчаливого «основного» больше нет. */
-function askStream(action){
-  const s=prompt('В какой поток '+action+'?\n\n'
-    +'1 — основной адрес расписания\n'
-    +'2 — второй поток (адрес с ?stream=2)\n\n'
-    +'Можно указать и другой номер, если такой поток уже ведётся.', '2');
-  if(s===null) return null;                       // отказались
-  const n=parseInt(String(s).trim(),10);
-  if(!(n>=1)){ alert('Нужен номер потока — например 1 или 2.'); return null; }
-  return n;
+function slotOf(file){
+  const m=/^data-(\d+)\.json$/.exec(file);
+  return m?parseInt(m[1],10):1;
+}
+/* Какие расписания вообще существуют. Спрашиваем у репозитория, а не считаем номера:
+   тогда в списке видны настоящие названия, и редактору не нужно помнить, что лежит
+   по какому адресу. Шаблон отбора не пускает сюда data-test.json — черновик не цель
+   для заливки, он её источник. */
+async function listSchedules(){
+  const items=await ghGet('/contents/assets');
+  const files=(Array.isArray(items)?items:[])
+    .map(it=>it&&it.name)
+    .filter(n=>typeof n==='string' && /^data(-\d+)?\.json$/.test(n))
+    .sort((a,b)=>slotOf(a)-slotOf(b));
+  if(!files.length) throw new Error('в репозитории нет ни одного файла расписания');
+  const out=[];
+  for(const file of files){
+    /* Названия читаем с CDN, а не через API: лимит запросов не тратится. */
+    const res=await fetchSchedule(RAW_BASE+file);
+    const nd=res&&res.nd;
+    out.push({n:slotOf(file), file:file, title:(nd&&nd.title)||''});
+  }
+  return out;
+}
+/* Выбор расписания для переноса: редактор вводит номер строки списка, а не номер
+   потока. Если список получить не удалось — не отключаем кнопку, а спрашиваем адрес
+   напрямую и честно говорим, почему список не показан. */
+async function askSchedule(action){
+  let list=null;
+  try{ list=await listSchedules(); }
+  catch(e){ console.warn('list schedules failed:', e); }
+  if(list && list.length){
+    const lines=list.map((s,i)=>(i+1)+' — '+(s.title||'без названия')
+      +' ('+(s.n===1?'основной адрес':'?stream='+s.n)+')');
+    const ans=prompt('Какое расписание '+action+'?\n\n'+lines.join('\n')
+      +'\n\nВведите номер строки.', '1');
+    if(ans===null) return null;
+    const i=parseInt(String(ans).trim(),10);
+    if(!(i>=1 && i<=list.length)){ alert('Нужен номер строки от 1 до '+list.length+'.'); return null; }
+    return list[i-1];
+  }
+  const ans=prompt('Список расписаний получить не удалось — похоже, нет связи с GitHub.\n\n'
+    +'Укажите адрес вручную: 1 — основной адрес, 2 — адрес с ?stream=2, и так далее.', '1');
+  if(ans===null) return null;
+  const n=parseInt(String(ans).trim(),10);
+  if(!(n>=1)){ alert('Нужен номер адреса — например 1 или 2.'); return null; }
+  return {n:n, file:streamFile(n), title:''};
+}
+/* Обозначение расписания в диалогах — ровно в том же виде, что в списке выбора:
+   имя и адрес рядом. Называем цель отдельной строкой, а не вставляем в предложение:
+   у безымянного расписания предлог не склеился бы («залить в по адресу ?stream=2»). */
+function scheduleName(s){
+  return (s.title||'без названия')+' ('+(s.n===1?'основной адрес':'?stream='+s.n)+')';
 }
 /* Взять расписание потока в черновик — чтобы править от готового состояния.
    Пишет только в страницу, в репозиторий ничего не уходит. */
 async function pullFromStream(){
-  const n=askStream('взять расписание'); if(n===null) return;
-  if(!confirm('Заменить то, что сейчас на этой странице, расписанием потока '+n+'?\n\n'
-    +'Несохранённые правки на странице пропадут. В самом потоке '+n+' ничего не изменится.')) return;
   const btn=$('ed-pull'), orig=btn.textContent;
+  btn.disabled=true; btn.textContent='Смотрю список…';
+  const s=await askSchedule('взять');
+  btn.textContent=orig; btn.disabled=false;
+  if(!s) return;
+  if(!confirm('Взять готовое расписание в черновик?\n\n'
+    +'Откуда: '+scheduleName(s)+'\n\n'
+    +'Несохранённые правки на этой странице пропадут. В самом расписании ничего не изменится.')) return;
   btn.disabled=true; btn.textContent='Загружаю…';
   try{
-    const nd=await fetchStreamSchedule(n);
-    if(!nd || !nd.months.length) throw new Error('в потоке '+n+' пока нет расписания');
+    const nd=await fetchStreamSchedule(s.n);
+    if(!nd || !nd.months.length) throw new Error('там пока нет ни одного месяца');
     MONTHS=nd.months.slice(); DATA=nd.data; TITLE=nd.title||'';
     LOAD_STATE='ok';
     saveWIP(); render(); fit();
-    btn.textContent='Взято из потока '+n+' ✓';
+    btn.textContent='Взято ✓';
   }catch(err){
     console.warn('pull failed:', err);
-    alert('Не получилось взять расписание потока '+n+':\n'+err.message);
+    alert('Не получилось взять расписание.\n\nОткуда: '+scheduleName(s)+'\nПричина: '+err.message);
   }
   setTimeout(()=>{ btn.textContent=orig; btn.disabled=false; }, 2500);
 }
@@ -813,25 +873,31 @@ async function promoteToStream(){
      значит стереть живое расписание потока, чего никто не хочет специально. */
   if(!d.months.length){
     alert('Черновик пустой — заливать нечего.\n\n'
-      +'Добавьте месяцы и занятия либо нажмите «Взять из потока», если хотели начать с готового расписания.');
+      +'Добавьте месяцы и занятия либо нажмите «Взять из расписания…», если хотели начать с готового.');
     return;
   }
-  const n=askStream('залить это расписание'); if(n===null) return;
-  if(!confirm('Залить это расписание в поток '+n+'?\n\n'
+  const btn=$('ed-promote'), orig=btn.textContent;
+  btn.disabled=true; btn.textContent='Смотрю список…';
+  const s=await askSchedule('заменить этим черновиком');
+  btn.textContent=orig; btn.disabled=false;
+  if(!s) return;
+  if(!confirm('Залить этот черновик в расписание?\n\n'
+    +'Куда: '+scheduleName(s)+'\n'
     +'Месяцев: '+d.months.length+', занятий: '+countLessons(d.data)+'\n'
     +'Месяцы: '+d.months.map(m=>m.name).join(', ')+'\n\n'
-    +'Текущее расписание потока '+n+' будет заменено целиком.\n'
+    +'Расписание там будет заменено целиком.\n'
     +'Студенты увидят новое через несколько минут.\n'
-    +'Откатить можно кнопкой «История» на странице этого потока.')) return;
-  const btn=$('ed-promote'), orig=btn.textContent;
+    +'Откатить можно кнопкой «История» на его странице.')) return;
   btn.disabled=true; btn.textContent='Заливаю…';
   try{
-    await ghPutFile(streamPath(n), b64utf8(JSON.stringify(d,null,2)),
-      'schedule: залито из черновика в поток '+n+' '+stamp());
-    btn.textContent='Залито в поток '+n+' ✓';
+    /* В сообщении коммита — имя файла: однозначный технический факт. Номер потока
+       здесь был бы таким же ложным утверждением, как и в подписи. */
+    await ghPutFile('assets/'+s.file, b64utf8(JSON.stringify(d,null,2)),
+      'schedule: залито из черновика в '+s.file+' '+stamp());
+    btn.textContent='Залито ✓';
   }catch(err){
     console.warn('promote failed:', err);
-    alert('Не получилось залить в поток '+n+':\n'+err.message);
+    alert('Не получилось залить.\n\nКуда: '+scheduleName(s)+'\nПричина: '+err.message);
   }
   setTimeout(()=>{ btn.textContent=orig; btn.disabled=false; }, 3200);
 }
@@ -986,15 +1052,13 @@ $('ed-hist').addEventListener('click',e=>{
 /* Режимы отличаются набором кнопок и надписями на них. Где мы находимся, видно
    по подписи под заголовком и по заголовку вкладки. */
 if(TEST_MODE){
-  document.title='ЧЕРНОВИК — '+document.title;
   $('ed-pub').textContent='Сохранить черновик';
   $('ed-reset').textContent='Очистить';
-  $('ed-pull').textContent='Взять из потока…';
-  $('ed-promote').textContent='Залить в поток…';
+  $('ed-pull').textContent='Взять из расписания…';
+  $('ed-promote').textContent='Залить в расписание…';
   $('ed-pull').hidden=false;    $('ed-pull').addEventListener('click',pullFromStream);
   $('ed-promote').hidden=false; $('ed-promote').addEventListener('click',promoteToStream);
 }else{
-  if(STREAM>1) document.title='Поток '+STREAM+' — '+document.title;
   $('ed-reset').textContent='Вернуть опубликованное';
   $('ed-history').hidden=false;
 }
