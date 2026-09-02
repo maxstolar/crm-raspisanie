@@ -165,15 +165,18 @@ body.editing .m-del:hover{background:rgba(242,27,27,.16);}
 /* Подсказка на месте расписания, когда месяцев нет (чистый тест). */
 .empty{position:absolute;left:54px;top:546px;max-width:1200px;color:#9AA1AB;
   font-family:'CoFoSchedule','Inter',system-ui,sans-serif;font-size:28px;line-height:1.4;font-weight:500;}
-/* Тестовый режим (?test в адресе): жёлтая плашка сверху, остальное съезжает под неё. */
-#test-bar{display:none;position:fixed;top:0;left:0;right:0;z-index:10000;background:#F2A81B;color:#292B32;
+/* Плашка сверху: спокойная — для второго и следующих потоков («Поток 2»), жёлтая —
+   для черновика. На основном адресе плашки нет, страница выглядит как раньше.
+   Когда плашка есть, всё остальное съезжает под неё. */
+#mode-bar{display:none;position:fixed;top:0;left:0;right:0;z-index:10000;background:#E7EBEF;color:#4A5260;
   font-family:'CoFoSchedule','Inter',system-ui,sans-serif;font-size:14px;font-weight:500;
   letter-spacing:.02em;padding:8px 16px;text-align:center;}
-body.testmode #test-bar{display:block;}
-body.testmode{padding-top:34px;}
-body.testmode #ed-bar{top:34px;}
-body.testmode.editing{padding-top:86px;}
-body.testmode #ed-panel{top:86px;}
+#mode-bar.draft{background:#F2A81B;color:#292B32;}
+body.modebar #mode-bar{display:block;}
+body.modebar{padding-top:34px;}
+body.modebar #ed-bar{top:34px;}
+body.modebar.editing{padding-top:86px;}
+body.modebar #ed-panel{top:86px;}
 #ed-bar .promote{background:#F2A81B;color:#292B32;}
 #ed-bar .pull{background:#F0F3F6;color:#292B32;}
 #ed-panel input[type=file]{padding:7px 9px;font-size:13px;background:#F8FAFB;cursor:pointer;}
@@ -185,7 +188,7 @@ body.testmode #ed-panel{top:86px;}
 </head>
 <body>
 
-<div id="test-bar">ТЕСТОВАЯ КОПИЯ — это черновик следующего потока, студенты его не видят</div>
+<div id="mode-bar"></div>
 <div class="page"><div class="stage" id="stage"></div></div>
 
 <!-- editor (dormant unless #edit + password) -->
@@ -293,18 +296,27 @@ const RAW_BASE='https://raw.githubusercontent.com/'+GH_OWNER+'/'+GH_REPO+'/'+GH_
 /* Тестовый режим включается параметром ?test в адресе. Тестовое расписание лежит в отдельном
    файле, основное не затрагивается. Вёрстка, редактор и загрузка фото — те же самые:
    второй копии кода нет, поэтому тест и прод не могут разъехаться. */
-const TEST_MODE=new URLSearchParams(location.search).has('test');
-const GH_PATH_PROD='assets/data.json', GH_PATH_TEST='assets/data-test.json';
-const GH_PATH=TEST_MODE?GH_PATH_TEST:GH_PATH_PROD;
-/* Источники данных по порядку. Тест читает только свой файл: подмешивать основное
-   расписание нельзя, иначе чистый лист превратится в копию текущего потока.
-   Если своего файла ещё нет, тест открывается пустым — месяцы добавляет редактор. */
-const DATA_SOURCES=TEST_MODE
-  ? [RAW_BASE+'data-test.json','data-test.json']
-  : [RAW_BASE+'data.json','data.json'];
-/* Черновик в localStorage — свой на каждый режим, иначе правки из теста предложат
-   восстановить в основном расписании. */
-const WIP_KEY=TEST_MODE?'mbx_schedule_test':'mbx_schedule';
+const Q=new URLSearchParams(location.search);
+const TEST_MODE=Q.has('test');
+/* Потоки школы живут параллельно и независимо, каждый на своём адресе и в своём файле:
+   без параметра — поток 1 (основной адрес, data.json), ?stream=2 — поток 2 (data-2.json).
+   Третий поток появится без правок кода: ?stream=3 → data-3.json. Изоляция по файлам
+   заодно снимает вопрос про одинаковые месяцы у разных потоков: года в модели данных нет,
+   месяц опознаётся по названию, и два сентября в одном файле не поместились бы. */
+const STREAM=Math.max(1, parseInt(Q.get('stream')||'1',10) || 1);
+const streamFile=n=>n===1?'data.json':'data-'+n+'.json';
+const streamPath=n=>'assets/'+streamFile(n);
+const GH_PATH=TEST_MODE?'assets/data-test.json':streamPath(STREAM);
+/* Источники данных по порядку: сначала напрямую из GitHub, потом копия с витрины.
+   Каждый режим читает только свой файл — подмешивать чужой нельзя, иначе чистый лист
+   превратится в копию другого потока. Если своего файла ещё нет, страница открывается
+   пустой: месяцы добавляет редактор. */
+const DATA_FILE=TEST_MODE?'data-test.json':streamFile(STREAM);
+const DATA_SOURCES=[RAW_BASE+DATA_FILE, DATA_FILE];
+/* Черновик в localStorage — свой на каждый режим и каждый поток, иначе правки из одного
+   предложат восстановить в другом. */
+const WIP_KEY=TEST_MODE?'mbx_schedule_test'
+  :(STREAM===1?'mbx_schedule':'mbx_schedule_'+STREAM);
 /* Токен публикации в GitHub. Разбит на части не ради защиты (страница публичная, собрать
    его обратно может любой), а чтобы автоматические сканеры секретов — включая сканер
    самого GitHub, который отзывает найденные в публичных репозиториях токены — не
@@ -340,12 +352,20 @@ let LOAD_STATE='loading';   // loading | ok | empty | failed
    {missing:true} — ответил, что файла нет (нормально для теста, который ещё не собрали),
    {nd:…} — отдал содержимое, в котором расписание может быть и пустым. */
 async function fetchSchedule(url){
+  /* Обязательный таймаут. Недоступная сеть далеко не всегда отвечает отказом: если
+     пакеты молча теряются (обычное дело в корпоративных сетях с фильтрацией), запрос
+     висит до TCP-таймаута, и всё это время страница пустая, хотя копия расписания
+     лежит на том же домене. Пять секунд — с запасом: GitHub обычно отвечает за
+     доли секунды, а если нет, ждать его смысла больше нет. */
+  const ctl=new AbortController();
+  const timer=setTimeout(()=>ctl.abort(), 5000);
   try{
-    const r=await fetch(url+'?ts='+Date.now(),{cache:'no-store'});
+    const r=await fetch(url+'?ts='+Date.now(),{cache:'no-store',signal:ctl.signal});
     if(r.status===404) return {missing:true};
     if(!r.ok) return null;
     return { nd: normalizeData(await r.json()) };
   }catch(e){ return null; }
+  finally{ clearTimeout(timer); }
 }
 /* Идём по источникам сверху вниз и останавливаемся на первом, который дал расписание.
    Раньше здесь был третий рубеж — расписание, вшитое в страницу. Его убрали: оно было
@@ -369,8 +389,9 @@ async function loadSchedule(){
 }
 loadSchedule();
 /* Опубликованное основное расписание — то, что прямо сейчас видят студенты. */
-async function fetchProdSchedule(){
-  const res=await fetchSchedule(RAW_BASE+'data.json') || await fetchSchedule('data.json');
+async function fetchStreamSchedule(n){
+  const f=streamFile(n);
+  const res=await fetchSchedule(RAW_BASE+f) || await fetchSchedule(f);
   return res ? res.nd : null;
 }
 
@@ -441,7 +462,7 @@ function emptyText(){
   if(LOAD_STATE==='failed') return 'Не удалось загрузить расписание.<br>Проверьте соединение и обновите страницу.';
   if(!editMode) return 'Расписание пока не заполнено.';
   return TEST_MODE
-    ? 'Пусто. Нажмите «+ Добавить месяц» вверху, чтобы собрать расписание нового потока,<br>или «Взять из основного», чтобы начать с текущего.'
+    ? 'Пусто. Нажмите «+ Добавить месяц» вверху, чтобы собрать расписание нового потока,<br>или «Взять из потока…», чтобы начать с готового.'
     : 'Расписание пустое. Нажмите «+ Добавить месяц», чтобы его собрать,<br>или «История», чтобы вернуть одну из прошлых версий.';
 }
 function render(){
@@ -551,17 +572,31 @@ function ghErrText(status){
 function ghHeaders(){
   return {'Authorization':'Bearer '+GH_TOKEN,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
 }
+/* Запрос к GitHub с обязательным таймаутом. Недоступная сеть может не отвечать вовсе,
+   и без этого кнопка «Публикую…» висела бы бесконечно, ничего не сообщая. Двадцать
+   секунд — запись легально занимает секунды, но не минуты. */
+async function ghFetch(url, opts){
+  const ctl=new AbortController();
+  const timer=setTimeout(()=>ctl.abort(), 20000);
+  try{
+    return await fetch(url, Object.assign({}, opts, {signal:ctl.signal}));
+  }catch(e){
+    throw new Error(ctl.signal.aborted
+      ? 'GitHub не ответил за 20 секунд — проверьте соединение и попробуйте снова'
+      : 'нет связи с GitHub');
+  }finally{ clearTimeout(timer); }
+}
 /* Чтение из GitHub: пробуем с токеном (лимит 5000 запросов в час), при отказе — без него
    (репозиторий публичный, 60 в час на адрес). Благодаря этому история остаётся рабочей
    даже после того, как токен истечёт. */
 async function ghGet(pathAndQuery){
   const url='https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+pathAndQuery;
   if(GH_TOKEN && GH_TOKEN.indexOf('ВСТАВЬ')<0){
-    const r=await fetch(url,{headers:ghHeaders(),cache:'no-store'});
+    const r=await ghFetch(url,{headers:ghHeaders(),cache:'no-store'});
     if(r.ok) return r.json();
     if(r.status!==401 && r.status!==403) throw new Error(ghErrText(r.status));
   }
-  const r2=await fetch(url,{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
+  const r2=await ghFetch(url,{headers:{'Accept':'application/vnd.github+json'},cache:'no-store'});
   if(!r2.ok) throw new Error(ghErrText(r2.status));
   return r2.json();
 }
@@ -574,7 +609,7 @@ async function ghPutFile(path, contentB64, message, expectedSha){
   const headers=ghHeaders();
   // SHA нужен, чтобы обновить существующий файл; для нового его нет (404 — это норма)
   let sha=null;
-  const gr=await fetch(api+'?ref='+GH_BRANCH,{headers,cache:'no-store'});
+  const gr=await ghFetch(api+'?ref='+GH_BRANCH,{headers,cache:'no-store'});
   if(gr.ok){ sha=(await gr.json()).sha; }
   else if(gr.status!==404){ throw new Error('не смог прочитать текущий файл: '+ghErrText(gr.status)); }
   if(expectedSha && sha && sha!==expectedSha){
@@ -583,7 +618,7 @@ async function ghPutFile(path, contentB64, message, expectedSha){
   }
   const body={message, content:contentB64, branch:GH_BRANCH};
   if(sha) body.sha=sha;
-  const pr=await fetch(api,{method:'PUT',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const pr=await ghFetch(api,{method:'PUT',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify(body)});
   if(!pr.ok) throw new Error(ghErrText(pr.status));
   return pr.json();
 }
@@ -645,7 +680,7 @@ async function openHistory(){
   $('ed-hist').classList.add('on');
   box.innerHTML='<div class="note">Загружаю историю…</div>';
   try{
-    const commits=await ghGet('/commits?path='+encodeURIComponent(GH_PATH_PROD)+'&per_page=20');
+    const commits=await ghGet('/commits?path='+encodeURIComponent(GH_PATH)+'&per_page=20');
     HIST=commits.map(c=>({
       sha:c.sha,
       when:(c.commit&&c.commit.author&&c.commit.author.date)||'',
@@ -672,12 +707,12 @@ async function loadVersion(i){
   const box=$('ed-hist-list');
   box.innerHTML='<div class="note">Загружаю версию от '+mskFromISO(h.when)+'…</div>';
   try{
-    const file=await ghGet('/contents/'+GH_PATH_PROD+'?ref='+h.sha);
+    const file=await ghGet('/contents/'+GH_PATH+'?ref='+h.sha);
     const nd=normalizeData(JSON.parse(decodeB64utf8(file.content)));
     if(!nd || !nd.months.length) throw new Error('в этой версии расписание пустое');
     /* Запоминаем, что лежит в репозитории сейчас, — на случай чужой публикации. */
     let head=null;
-    try{ head=(await ghGet('/contents/'+GH_PATH_PROD+'?ref='+GH_BRANCH)).sha; }catch(e){}
+    try{ head=(await ghGet('/contents/'+GH_PATH+'?ref='+GH_BRANCH)).sha; }catch(e){}
     HIST_BASE_SHA=head;
     MONTHS=nd.months.slice(); DATA=nd.data;
     LOAD_STATE='ok';
@@ -697,50 +732,65 @@ function countLessons(data){
   let n=0; Object.values(data||{}).forEach(days=>{ n+=Object.keys(days||{}).length; });
   return n;
 }
-/* Взять основное расписание в тест — чтобы править от текущего состояния.
+/* Спрашиваем номер потока. Потоки независимы, поэтому «залить» и «взять» всегда
+   требуют явно назвать, о каком речь: молчаливого «основного» больше нет. */
+function askStream(action){
+  const s=prompt('В какой поток '+action+'?\n\n'
+    +'1 — основной адрес расписания\n'
+    +'2 — второй поток (адрес с ?stream=2)\n\n'
+    +'Можно указать и другой номер, если такой поток уже ведётся.', '2');
+  if(s===null) return null;                       // отказались
+  const n=parseInt(String(s).trim(),10);
+  if(!(n>=1)){ alert('Нужен номер потока — например 1 или 2.'); return null; }
+  return n;
+}
+/* Взять расписание потока в черновик — чтобы править от готового состояния.
    Пишет только в страницу, в репозиторий ничего не уходит. */
-async function pullFromProd(){
-  if(!confirm('Заменить то, что сейчас на этой тестовой странице, основным расписанием?\n\n'
-    +'Несохранённые правки на странице пропадут. В основном расписании ничего не изменится.')) return;
+async function pullFromStream(){
+  const n=askStream('взять расписание'); if(n===null) return;
+  if(!confirm('Заменить то, что сейчас на этой странице, расписанием потока '+n+'?\n\n'
+    +'Несохранённые правки на странице пропадут. В самом потоке '+n+' ничего не изменится.')) return;
   const btn=$('ed-pull'), orig=btn.textContent;
   btn.disabled=true; btn.textContent='Загружаю…';
   try{
-    const nd=await fetchProdSchedule();
-    if(!nd || !nd.months.length) throw new Error('не смог прочитать основное расписание');
+    const nd=await fetchStreamSchedule(n);
+    if(!nd || !nd.months.length) throw new Error('в потоке '+n+' пока нет расписания');
     MONTHS=nd.months.slice(); DATA=nd.data;
     LOAD_STATE='ok';
     saveWIP(); render(); fit();
-    btn.textContent='Взято из основного ✓';
+    btn.textContent='Взято из потока '+n+' ✓';
   }catch(err){
     console.warn('pull failed:', err);
-    alert('Не получилось взять основное расписание:\n'+err.message);
+    alert('Не получилось взять расписание потока '+n+':\n'+err.message);
   }
   setTimeout(()=>{ btn.textContent=orig; btn.disabled=false; }, 2500);
 }
-/* Залить то, что на тестовой странице, в основное расписание — то самое «по кнопке». */
-async function promoteToProd(){
+/* Залить черновик в выбранный поток — то самое «по кнопке». */
+async function promoteToStream(){
   const d=pack();
-  /* Пустой тест — это состояние по умолчанию, а не результат работы. Заливать его
-     в основное значит стереть живое расписание, чего никто не хочет специально. */
+  /* Пустой черновик — состояние по умолчанию, а не результат работы. Заливать его
+     значит стереть живое расписание потока, чего никто не хочет специально. */
   if(!d.months.length){
-    alert('Тестовое расписание пустое — заливать нечего.\n\n'
-      +'Добавьте месяцы и занятия, либо нажмите «Взять из основного», если хотели начать с текущего расписания.');
+    alert('Черновик пустой — заливать нечего.\n\n'
+      +'Добавьте месяцы и занятия либо нажмите «Взять из потока», если хотели начать с готового расписания.');
     return;
   }
-  if(!confirm('Залить это расписание в основное?\n\n'
+  const n=askStream('залить это расписание'); if(n===null) return;
+  if(!confirm('Залить это расписание в поток '+n+'?\n\n'
     +'Месяцев: '+d.months.length+', занятий: '+countLessons(d.data)+'\n'
     +'Месяцы: '+d.months.map(m=>m.name).join(', ')+'\n\n'
-    +'Студенты увидят его на сайте через несколько минут.\n'
-    +'Откатить можно только через git revert в репозитории.')) return;
+    +'Текущее расписание потока '+n+' будет заменено целиком.\n'
+    +'Студенты увидят новое через несколько минут.\n'
+    +'Откатить можно кнопкой «История» на странице этого потока.')) return;
   const btn=$('ed-promote'), orig=btn.textContent;
   btn.disabled=true; btn.textContent='Заливаю…';
   try{
-    await ghPutFile(GH_PATH_PROD, b64utf8(JSON.stringify(d,null,2)),
-      'schedule: залито из теста '+stamp());
-    btn.textContent='Залито в основное ✓';
+    await ghPutFile(streamPath(n), b64utf8(JSON.stringify(d,null,2)),
+      'schedule: залито из черновика в поток '+n+' '+stamp());
+    btn.textContent='Залито в поток '+n+' ✓';
   }catch(err){
     console.warn('promote failed:', err);
-    alert('Не получилось залить в основное:\n'+err.message);
+    alert('Не получилось залить в поток '+n+':\n'+err.message);
   }
   setTimeout(()=>{ btn.textContent=orig; btn.disabled=false; }, 3200);
 }
@@ -869,7 +919,7 @@ $('ed-reset').addEventListener('click',async ()=>{
     +'В репозитории ничего не изменится — на сайте останется то, что уже опубликовано.')) return;
   const btn=$('ed-reset'), orig=btn.textContent;
   btn.disabled=true; btn.textContent='Загружаю…';
-  const nd=await fetchProdSchedule();
+  const nd=await fetchStreamSchedule(STREAM);
   if(nd && nd.months.length){
     MONTHS=nd.months.slice(); DATA=nd.data;
     LOAD_STATE='ok'; HIST_BASE_SHA=null;
@@ -891,15 +941,25 @@ $('ed-hist').addEventListener('click',e=>{
   if(row) loadVersion(parseInt(row.getAttribute('data-i'),10));
 });
 
-/* Режимы отличаются набором кнопок и надписями на них. */
+/* Режимы отличаются плашкой, набором кнопок и надписями на них. */
 if(TEST_MODE){
-  document.body.classList.add('testmode');
-  document.title='ТЕСТ — '+document.title;
-  $('ed-pub').textContent='Опубликовать в тест';
+  document.body.classList.add('modebar');
+  $('mode-bar').className='draft';
+  $('mode-bar').textContent='ЧЕРНОВИК — здесь собирают расписание перед заливкой в поток, студентам эту ссылку не дают';
+  document.title='ЧЕРНОВИК — '+document.title;
+  $('ed-pub').textContent='Сохранить черновик';
   $('ed-reset').textContent='Очистить';
-  $('ed-pull').hidden=false;    $('ed-pull').addEventListener('click',pullFromProd);
-  $('ed-promote').hidden=false; $('ed-promote').addEventListener('click',promoteToProd);
+  $('ed-pull').textContent='Взять из потока…';
+  $('ed-promote').textContent='Залить в поток…';
+  $('ed-pull').hidden=false;    $('ed-pull').addEventListener('click',pullFromStream);
+  $('ed-promote').hidden=false; $('ed-promote').addEventListener('click',promoteToStream);
 }else{
+  /* Поток 1 живёт на основном адресе и выглядит как раньше, без плашки. */
+  if(STREAM>1){
+    document.body.classList.add('modebar');
+    $('mode-bar').textContent='Поток '+STREAM;
+    document.title='Поток '+STREAM+' — '+document.title;
+  }
   $('ed-reset').textContent='Вернуть опубликованное';
   $('ed-history').hidden=false;
 }
