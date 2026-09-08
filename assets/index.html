@@ -133,6 +133,16 @@ body.editing .cell:hover{outline:3px solid #39AA5D;outline-offset:-3px;border-ra
 #ed-panel .apply{background:#39AA5D;color:#fff;}
 #ed-panel .clear{background:#F6F0F0;color:#F21B1B;}
 #ed-panel .hint{font-size:12px;color:#9AA1AB;line-height:1.4;}
+/* Быстрый ввод: шаблоны и буфер дня. Мелкие серые кнопки, как «удалить месяц». */
+#ed-panel .quick{display:flex;flex-wrap:wrap;gap:6px;}
+#ed-panel .quick button,#ed-panel .cp button{border:0;border-radius:8px;padding:7px 11px;font-size:13px;font-weight:500;
+  cursor:pointer;background:#F0F3F6;color:#292B32;font-family:inherit;}
+#ed-panel .quick button:hover,#ed-panel .cp button:hover{background:#E3E8EE;}
+#ed-panel .quick button.g{background:#E8F4EC;color:#237A41;}
+#ed-panel .quick button.g:hover{background:#D7ECDD;}
+#ed-panel .cp{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+#ed-panel .cp button:disabled{opacity:.45;cursor:default;}
+#ed-panel .cp .clip{font-size:12px;color:#9AA1AB;flex:1;min-width:100%;line-height:1.35;}
 .ed-hd{display:flex;align-items:center;gap:8px;}
 .ed-hd h4{flex:1;}
 .ed-x{border:0;background:#F0F3F6;color:#292B32;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;}
@@ -218,6 +228,13 @@ body.editing .m-del:hover{background:rgba(242,27,27,.16);}
 </div>
 <div id="ed-panel">
   <div class="ed-hd"><h4 id="ed-day">День</h4><button class="ed-x" id="ed-close" title="Закрыть">✕</button></div>
+  <div class="quick" id="ed-quick"></div>
+  <div class="cp">
+    <button type="button" id="ed-copy">Копировать день</button>
+    <button type="button" id="ed-paste" disabled>Вставить</button>
+    <span class="clip" id="ed-clip"></span>
+  </div>
+  <datalist id="ed-speakers"></datalist>
   <div class="f"><label>Тип</label>
     <select id="ed-type">
       <option value="">Пусто</option>
@@ -231,13 +248,13 @@ body.editing .m-del:hover{background:rgba(242,27,27,.16);}
   <div class="chk"><input type="checkbox" id="ed-nb"><span>Без бейджа</span></div>
   <div class="f"><label>Заголовок (перенос строки = новая строка)</label><textarea id="ed-title"></textarea></div>
   <div class="row">
-    <div class="f"><label>Спикер 1 — имя</label><input id="ed-sp1n" placeholder="Имя Фамилия"></div>
+    <div class="f"><label>Спикер 1 — имя</label><input id="ed-sp1n" placeholder="Имя Фамилия" list="ed-speakers" autocomplete="off"></div>
     <div class="f"><label>файл</label><input id="ed-sp1f" placeholder="ermakov"></div>
   </div>
   <div class="f"><label>Фото спикера 1 — обрежется в квадрат 120×120</label>
     <input type="file" id="ed-sp1img" accept="image/*"><span class="up" id="ed-sp1st"></span></div>
   <div class="row">
-    <div class="f"><label>Спикер 2 — имя</label><input id="ed-sp2n" placeholder="(если двое)"></div>
+    <div class="f"><label>Спикер 2 — имя</label><input id="ed-sp2n" placeholder="(если двое)" list="ed-speakers" autocomplete="off"></div>
     <div class="f"><label>файл</label><input id="ed-sp2f" placeholder=""></div>
   </div>
   <div class="f"><label>Фото спикера 2 — обрежется в квадрат 120×120</label>
@@ -249,7 +266,9 @@ body.editing .m-del:hover{background:rgba(242,27,27,.16);}
     <button class="clear" id="ed-clear">Очистить</button>
   </div>
   <div class="hint">«Применить» — обновляет страницу сразу. «Опубликовать» вверху — сохранить на сервере, чтобы правки увидели все.<br>
-    Фото загружается в репозиторий сразу при выборе файла — отдельно публиковать его не нужно. Имя файла берётся из поля «файл», а если оно пустое — из фамилии спикера.</div>
+    Шаблоны сверху заполняют тип, время и бейдж — название и спикера впишите сами, потом «Применить».
+    «Копировать день» берёт применённое занятие, «Вставить» кладёт его в открытый день сразу; с клавиатуры — Ctrl+C и Ctrl+V, когда курсор не в поле.<br>
+    Спикер подставляется по имени из уже введённых — начните печатать. Фото загружается в репозиторий сразу при выборе файла — отдельно публиковать его не нужно. Имя файла берётся из поля «файл», а если оно пустое — из фамилии спикера.</div>
 </div>
 
 <script>
@@ -555,6 +574,7 @@ function enterEdit(){
   document.body.classList.add('editing');
   $('ed-bar').classList.add('on');
   render(); fit();
+  loadMainSpeakers();
 }
 function exitEdit(){ editMode=false; document.body.classList.remove('editing'); $('ed-bar').classList.remove('on'); $('ed-panel').classList.remove('on'); sel=null; }
 function saveWIP(){ try{localStorage.setItem(WIP_KEY,JSON.stringify(pack()));}catch(e){} }
@@ -578,7 +598,8 @@ function openPanel(mName,d){
   $('ed-sp2n').value=sp[1]?sp[1][0]:''; $('ed-sp2f').value=sp[1]?sp[1][1]:'';
   $('ed-sm').checked=!!it.sm;
   $('ed-deco').checked=!!(it.deco||it.viz);
-  ['1','2'].forEach(n=>{ const st=$('ed-sp'+n+'st'); st.textContent=''; st.className='up'; });
+  ['1','2'].forEach(n=>{ const st=$('ed-sp'+n+'st'); st.textContent=''; st.className='up'; $('ed-sp'+n+'f').dataset.auto=''; });
+  refreshSpeakers(); refreshClipUI();
   $('ed-panel').classList.add('on');
 }
 function applyPanel(){
@@ -601,11 +622,122 @@ function applyPanel(){
   if($('ed-deco').checked){ it.deco=true; it.viz='workshop.png'; }
   DATA[sel.m]=DATA[sel.m]||{}; DATA[sel.m][sel.d]=it;
   saveWIP(); render(); fit();
+  refreshClipUI();
 }
 function clearDay(){
   if(sel && DATA[sel.m]) { delete DATA[sel.m][sel.d]; saveWIP(); render(); fit(); }
   $('ed-panel').classList.remove('on'); sel=null;
 }
+/* ==================== БЫСТРЫЙ ВВОД ==================== */
+/* Шаблоны — четыре формы, из которых состоит почти всё расписание: за четыре месяца
+   живого расписания других не появилось. Шаблон заполняет тип, время и бейдж, но не
+   применяет: название и спикера редактор вписывает сам. Спикеров шаблон не трогает —
+   если день уже был с спикером, он останется. Менять список — здесь, в коде. */
+const PRESETS=[
+  {label:'Вебинар 17:00', cls:'g', set:{type:'g', t:'17:00 — 19:00', bt:''}},
+  {label:'Вебинар 10:00', cls:'g', set:{type:'g', t:'10:00 — 12:00', bt:''}},
+  {label:'Текст',         cls:'',  set:{type:'s', t:'', bt:'Текст'}},
+  {label:'Подготовка к вебинару', cls:'', set:{type:'s', t:'', bt:'Текст', ttl:'Подготовка к вебинару'}},
+];
+function applyPreset(p){
+  $('ed-type').value=p.set.type;
+  $('ed-time').value=p.set.t||'';
+  $('ed-badge').value=p.set.bt||'';
+  $('ed-nb').checked=false;
+  if(p.set.ttl!==undefined) $('ed-title').value=p.set.ttl;
+  $('ed-title').focus();
+}
+PRESETS.forEach(p=>{
+  const b=document.createElement('button'); b.type='button'; b.textContent=p.label;
+  if(p.cls) b.className=p.cls;
+  b.addEventListener('click',()=>applyPreset(p));
+  $('ed-quick').appendChild(b);
+});
+
+/* Спикеры для автоподстановки: имя → файл аватарки. Собираются из самого расписания,
+   а не из отдельного справочника — справочник пришлось бы вести. Кто встретился первым,
+   тот и задаёт файл. В черновике и на втором адресе своих спикеров может ещё не быть,
+   поэтому туда подмешиваются спикеры основного адреса. */
+let SPEAKERS={};
+function collectSpeakers(data){
+  Object.values(data||{}).forEach(days=>Object.values(days||{}).forEach(it=>
+    (it&&it.sp||[]).forEach(s=>{ if(s&&s[0]&&!(s[0] in SPEAKERS)) SPEAKERS[s[0]]=s[1]||''; })));
+}
+function refreshSpeakers(){
+  collectSpeakers(DATA);
+  const dl=$('ed-speakers'); dl.innerHTML='';
+  Object.keys(SPEAKERS).sort((a,b)=>a.localeCompare(b,'ru')).forEach(n=>{
+    const o=document.createElement('option'); o.value=n; dl.appendChild(o);
+  });
+}
+async function loadMainSpeakers(){
+  if(!TEST_MODE && STREAM===1) return;
+  try{ const nd=await fetchStreamSchedule(1); if(nd){ collectSpeakers(nd.data); refreshSpeakers(); } }
+  catch(e){ console.warn('main speakers failed:', e); }
+}
+function wireSpeaker(n){
+  const name=$('ed-sp'+n+'n'), file=$('ed-sp'+n+'f');
+  name.addEventListener('input',()=>{
+    const f=SPEAKERS[name.value.trim()];
+    /* Файл подставляем, только если поле пустое или его заполнили мы же:
+       вписанное руками не трогаем. */
+    if(f!==undefined && (!file.value || file.dataset.auto==='1')){ file.value=f; file.dataset.auto='1'; }
+  });
+  file.addEventListener('input',()=>{ file.dataset.auto=''; });
+}
+wireSpeaker(1); wireSpeaker(2);
+
+/* Буфер дня. Копируется применённое занятие, а не содержимое полей: то, что видно
+   на странице, и есть то, что скопируется. Живёт в sessionStorage — переживает
+   перезагрузку страницы, но не тащится между вкладками. */
+const CLIP_KEY='mbx_clip';
+function getClip(){ try{ return JSON.parse(sessionStorage.getItem(CLIP_KEY)||'null'); }catch(e){ return null; } }
+function dayLabel(it){
+  const kind={g:'вебинар',s:'текст',y:'важная дата',k:'чёрная пятница'}[it.type]||it.type;
+  const ttl=Array.isArray(it.ttl)?it.ttl.join(' '):(it.ttl||'');
+  return kind+(it.t?' '+it.t:'')+(ttl?' · «'+ttl+'»':'');
+}
+function refreshClipUI(){
+  const c=getClip();
+  $('ed-paste').disabled=!c;
+  $('ed-clip').textContent=c?'В буфере: '+dayLabel(c):'';
+  const cur=sel&&(DATA[sel.m]||{})[sel.d];
+  $('ed-copy').disabled=!(cur&&cur.type);
+}
+function flashBtn(b,text){
+  if(!b.dataset.orig) b.dataset.orig=b.textContent;
+  b.textContent=text;
+  setTimeout(()=>{ b.textContent=b.dataset.orig; }, 1500);
+}
+function copyDay(){
+  const it=sel&&(DATA[sel.m]||{})[sel.d];
+  if(!it||!it.type) return;
+  try{ sessionStorage.setItem(CLIP_KEY,JSON.stringify(it)); }catch(e){}
+  refreshClipUI();
+  flashBtn($('ed-copy'),'Скопировано ✓');
+}
+function pasteDay(){
+  const c=getClip(); if(!c||!sel) return;
+  const cur=(DATA[sel.m]||{})[sel.d];
+  /* Пустые дни и дни без названия заменяем молча — там нечего терять. Настоящее
+     занятие — только с подтверждением: отмены у одного дня нет. */
+  if(cur&&cur.type&&cur.ttl && !confirm('Здесь уже есть занятие: '+dayLabel(cur)+'.\n\nЗаменить его скопированным?')) return;
+  DATA[sel.m]=DATA[sel.m]||{}; DATA[sel.m][sel.d]=JSON.parse(JSON.stringify(c));
+  saveWIP(); render(); fit();
+  openPanel(sel.m, sel.d);
+  flashBtn($('ed-paste'),'Вставлено ✓');
+}
+$('ed-copy').addEventListener('click',copyDay);
+$('ed-paste').addEventListener('click',pasteDay);
+document.addEventListener('keydown',e=>{
+  if(!editMode||!sel||!(e.ctrlKey||e.metaKey)) return;
+  const tag=(e.target.tagName||'').toLowerCase();
+  if(tag==='input'||tag==='textarea'||tag==='select') return;   // в поле — обычное копирование текста
+  /* e.code, а не e.key: на русской раскладке Ctrl+C приходит как «с», код клавиши — один. */
+  if(e.code==='KeyC'){ e.preventDefault(); copyDay(); }
+  else if(e.code==='KeyV'){ e.preventDefault(); pasteDay(); }
+});
+
 /* ==================== ЗАПИСЬ В GITHUB ==================== */
 function ghErrText(status){
   if(status===401) return 'токен недействителен или отозван';
