@@ -163,6 +163,38 @@ body.editing .m-del:hover{background:rgba(242,27,27,.16);}
 #ed-hist .hint{font-size:12px;color:#9AA1AB;line-height:1.4;}
 #ed-hist .note{font-size:14px;color:#6B7280;padding:8px 2px;}
 #ed-hist .note.err{color:#F21B1B;}
+/* Выбор спикера: окно с сеткой карточек «фото + имя». */
+#ed-pick{position:fixed;inset:0;z-index:10001;background:rgba(20,22,28,.55);display:none;
+  align-items:center;justify-content:center;font-family:'CoFoSchedule','Inter',system-ui,sans-serif;}
+#ed-pick.on{display:flex;}
+#ed-pick .box{background:#fff;border-radius:16px;padding:22px;width:560px;max-width:calc(100vw - 24px);max-height:84vh;
+  display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+#ed-pick h4{font-size:19px;font-weight:500;color:#292B32;}
+#ed-pick input{width:100%;padding:9px 11px;border:1px solid #D5DBE1;border-radius:9px;font-size:15px;font-family:inherit;}
+#ed-pick .grid{overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;min-height:80px;padding:2px;}
+.pcard{display:flex;align-items:center;gap:10px;text-align:left;border:1px solid #E7EBEF;border-radius:10px;
+  padding:8px 10px;background:#fff;cursor:pointer;font-family:inherit;min-width:0;}
+.pcard:hover{background:#F0F3F6;}
+.pcard .ava{flex:none;width:44px;height:44px;border-radius:22px;}
+.pcard .ava .ini{font-size:14px;}
+.pcard .nm{font-size:14px;font-weight:500;color:#292B32;line-height:1.25;min-width:0;overflow-wrap:anywhere;}
+.pcard .sub{display:block;font-size:11.5px;font-weight:400;color:#9AA1AB;}
+.pcard.orphan .nm{color:#6B7280;font-weight:400;}
+.pcard.none .ava{border-style:dashed;}
+#ed-pick .hint{font-size:13px;color:#6B7280;line-height:1.4;}
+#ed-pick .add{border-top:1px solid #E7EBEF;padding-top:12px;display:flex;flex-direction:column;gap:8px;}
+#ed-pick .add .row{display:flex;gap:8px;align-items:center;}
+#ed-pick .add .row input{flex:1;}
+#ed-pick .add input[type=file]{padding:7px 9px;font-size:13px;background:#F8FAFB;cursor:pointer;}
+#ed-pick .add button{flex:none;border:0;border-radius:9px;padding:10px 14px;font-size:14px;font-weight:500;cursor:pointer;
+  background:#39AA5D;color:#fff;font-family:inherit;}
+#ed-pick .add button:disabled{opacity:.5;cursor:default;}
+#ed-pick .st{font-size:12px;color:#9AA1AB;min-height:16px;line-height:1.35;}
+#ed-pick .st.ok{color:#39AA5D;}
+#ed-pick .st.err{color:#F21B1B;}
+#ed-panel .row .pick{flex:none;align-self:flex-end;border:0;border-radius:8px;padding:9px 10px;font-size:13px;font-weight:500;
+  cursor:pointer;background:#F0F3F6;color:#292B32;font-family:inherit;white-space:nowrap;}
+#ed-panel .row .pick:hover{background:#E3E8EE;}
 /* align-items у кнопки в браузерных стилях — center, из-за чего колонка центруется */
 .hrow{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;
   width:100%;cursor:pointer;border:1px solid #E7EBEF;border-radius:10px;padding:10px 12px;
@@ -216,6 +248,17 @@ body.editing .m-del:hover{background:rgba(242,27,27,.16);}
   <div class="hint">Выбранная версия загрузится в страницу, чтобы её можно было посмотреть.
     На сайте ничего не изменится, пока не нажмёте «Опубликовать».</div>
 </div></div>
+<div id="ed-pick"><div class="box">
+  <div class="ed-hd"><h4 id="ed-pick-title">Спикер</h4><button class="ed-x" id="ed-pick-close" title="Закрыть">✕</button></div>
+  <input id="ed-pick-q" placeholder="Найти по имени" autocomplete="off">
+  <div class="grid" id="ed-pick-grid"></div>
+  <div class="add">
+    <div class="hint">Новый спикер — впишите имя и, если есть, выберите фото: оно обрежется в квадрат и сразу уйдёт в репозиторий.</div>
+    <div class="row"><input type="text" id="ed-pick-name" placeholder="Имя Фамилия" autocomplete="off"><button type="button" id="ed-pick-add">Добавить</button></div>
+    <input type="file" id="ed-pick-img" accept="image/*">
+    <div class="st" id="ed-pick-st"></div>
+  </div>
+</div></div>
 <div id="ed-bar">
   <b>Режим редактирования</b>
   <button class="add" id="ed-add-month">+ Добавить месяц</button>
@@ -250,12 +293,14 @@ body.editing .m-del:hover{background:rgba(242,27,27,.16);}
   <div class="row">
     <div class="f"><label>Спикер 1 — имя</label><input id="ed-sp1n" placeholder="Имя Фамилия" list="ed-speakers" autocomplete="off"></div>
     <div class="f"><label>файл</label><input id="ed-sp1f" placeholder="ermakov"></div>
+    <button type="button" class="pick" data-n="1" title="Выбрать из уже известных или добавить нового">Выбрать…</button>
   </div>
   <div class="f"><label>Фото спикера 1 — обрежется в квадрат 120×120</label>
     <input type="file" id="ed-sp1img" accept="image/*"><span class="up" id="ed-sp1st"></span></div>
   <div class="row">
     <div class="f"><label>Спикер 2 — имя</label><input id="ed-sp2n" placeholder="(если двое)" list="ed-speakers" autocomplete="off"></div>
     <div class="f"><label>файл</label><input id="ed-sp2f" placeholder=""></div>
+    <button type="button" class="pick" data-n="2" title="Выбрать из уже известных или добавить нового">Выбрать…</button>
   </div>
   <div class="f"><label>Фото спикера 2 — обрежется в квадрат 120×120</label>
     <input type="file" id="ed-sp2img" accept="image/*"><span class="up" id="ed-sp2st"></span></div>
@@ -893,7 +938,9 @@ async function openHistory(){
     if(!HIST.length){ box.innerHTML='<div class="note">Публикаций пока не было.</div>'; return; }
     box.innerHTML=HIST.map((h,i)=>{
       const tags=(i===0?'<span class="tag cur">сейчас на сайте</span>':'')
-        +(/залито из теста/.test(h.msg)?'<span class="tag test">из теста</span>':'');
+        /* Сообщение заливки менялось: раньше «из теста», теперь «из черновика в data-N.json».
+           Метка должна ловить оба, иначе старые заливки в истории теряют пометку. */
+        +(/залито из (теста|черновика)/.test(h.msg)?'<span class="tag test">из черновика</span>':'');
       return '<button class="hrow" data-i="'+i+'">'
         +'<span class="top"><b>'+mskFromISO(h.when)+'</b>'+tags+'</span>'
         +'<span class="sub">'+h.msg+(h.who?' · '+h.who:'')+'</span></button>';
@@ -1090,6 +1137,12 @@ function squarePngBase64(file,S){
     img.src=url;
   });
 }
+/* Общая часть загрузки фото — кадрирование и коммит. Вызывается и из панели дня,
+   и из окна выбора спикера, поэтому ничего про поля формы не знает. */
+async function uploadAvatarFile(file, slug){
+  const b64=await squarePngBase64(file,120);
+  await ghPutFile('assets/avatars/'+slug+'.png', b64, 'avatar: '+slug+' ('+stamp()+')');
+}
 async function onPickAvatar(which){
   const inp=$('ed-sp'+which+'img'), st=$('ed-sp'+which+'st');
   const file=inp.files && inp.files[0]; if(!file) return;
@@ -1101,8 +1154,7 @@ async function onPickAvatar(which){
   }
   st.className='up'; st.textContent='загружаю '+slug+'.png…';
   try{
-    const b64=await squarePngBase64(file,120);
-    await ghPutFile('assets/avatars/'+slug+'.png', b64, 'avatar: '+slug+' ('+stamp()+')');
+    await uploadAvatarFile(file, slug);
     slugField.value=slug;
     st.className='up ok';
     if($('ed-type').value){
@@ -1116,6 +1168,121 @@ async function onPickAvatar(which){
     st.className='up err'; st.textContent='не вышло: '+err.message;
   }finally{ inp.value=''; }
 }
+
+/* ==================== ВЫБОР СПИКЕРА ==================== */
+/* Окно со всеми, кто уже есть. Имена и файлы берутся из расписаний (SPEAKERS), а фото,
+   которые лежат в репозитории без имени — загрузили и не применили, — из каталога
+   avatars/ через API. Отдельного справочника спикеров нет намеренно: он стал бы третьим
+   источником правды рядом с расписанием и каталогом фото и расходился бы с обоими. */
+let PICK_N=1;        // для какого спикера открыто окно
+let ORPHANS=null;    // файлы в avatars/ без имени; null — ещё не спрашивали
+async function listOrphanAvatars(){
+  const items=await ghGet('/contents/assets/avatars');
+  const used=new Set(Object.values(SPEAKERS).map(f=>String(f).toLowerCase()));
+  return (Array.isArray(items)?items:[])
+    .map(it=>it&&it.name).filter(n=>typeof n==='string' && /\.png$/i.test(n))
+    .map(n=>n.replace(/\.png$/i,''))
+    .filter(s=>s!=='workshop' && !used.has(s.toLowerCase()))
+    .sort();
+}
+function pickCard(name,file,cls){
+  const b=document.createElement('button'); b.type='button'; b.className='pcard'+(cls?' '+cls:'');
+  b.dataset.name=name||''; b.dataset.file=file||'';
+  let ava, label, sub;
+  if(cls==='none'){ ava='<div class="ava"><span class="ini">—</span></div>'; label='Без спикера'; sub=''; }
+  else if(cls==='orphan'){ ava=avaHTML(['?',file]); label='Фото без имени'; sub=file+'.png · нажмите, чтобы дать имя'; }
+  else { ava=avaHTML([name,file]); label=name; sub=file?file+'.png':'без фото'; }
+  /* В ячейках картинки ленивые, а окно рисуется до того, как показано: ленивая картинка
+     в невидимом контейнере не грузится. В окне их два десятка — грузим сразу. */
+  ava=ava.replace(' loading="lazy"',' loading="eager"');
+  b.innerHTML=ava+'<div class="nm">'+label+(sub?'<span class="sub">'+sub+'</span>':'')+'</div>';
+  return b;
+}
+function renderPicker(){
+  const q=$('ed-pick-q').value.trim().toLowerCase();
+  const grid=$('ed-pick-grid'); grid.innerHTML='';
+  if(!q) grid.appendChild(pickCard('','','none'));
+  Object.keys(SPEAKERS).sort((a,b)=>a.localeCompare(b,'ru'))
+    .filter(n=>!q || n.toLowerCase().includes(q))
+    .forEach(n=>grid.appendChild(pickCard(n,SPEAKERS[n],'')));
+  (ORPHANS||[]).filter(f=>!q || f.toLowerCase().includes(q))
+    .forEach(f=>grid.appendChild(pickCard('',f,'orphan')));
+}
+function resetPickForm(){
+  const nameEl=$('ed-pick-name');
+  nameEl.value=''; nameEl.dataset.file=''; nameEl.placeholder='Имя Фамилия';
+  $('ed-pick-img').value='';
+  $('ed-pick-st').textContent=''; $('ed-pick-st').className='st';
+  $('ed-pick-add').disabled=false;
+}
+async function openPicker(n){
+  PICK_N=n;
+  $('ed-pick-title').textContent='Спикер '+n;
+  $('ed-pick-q').value='';
+  resetPickForm();
+  refreshSpeakers(); renderPicker();
+  $('ed-pick').classList.add('on');
+  $('ed-pick-q').focus();
+  if(ORPHANS===null){
+    /* Список показан сразу из того, что знаем; фото без имён дорисуются, когда ответит API.
+       Без токена или без сети их просто не будет — окно от этого не ломается. */
+    try{ ORPHANS=await listOrphanAvatars(); }
+    catch(e){ console.warn('avatars listing failed:', e); ORPHANS=[]; }
+    if($('ed-pick').classList.contains('on')) renderPicker();
+  }
+}
+function closePicker(){ $('ed-pick').classList.remove('on'); }
+/* Записать выбор в поля панели. Если тип дня уже выбран — применяем сразу, как делает
+   загрузка фото: спикер виден на странице без лишнего клика. */
+function setSpeaker(n,name,file){
+  $('ed-sp'+n+'n').value=name||''; $('ed-sp'+n+'f').value=file||''; $('ed-sp'+n+'f').dataset.auto=file?'1':'';
+  if(name && !(name in SPEAKERS)) SPEAKERS[name]=file||'';
+  if($('ed-type').value) applyPanel();
+}
+$('ed-pick-grid').addEventListener('click',e=>{
+  const c=e.target.closest('.pcard'); if(!c) return;
+  if(c.classList.contains('orphan')){
+    /* Фото без имени: само по себе спикером не станет — ведём в форму добавления с этим файлом. */
+    const nameEl=$('ed-pick-name');
+    nameEl.dataset.file=c.dataset.file;
+    nameEl.placeholder='Имя для фото '+c.dataset.file+'.png';
+    nameEl.focus();
+    $('ed-pick-st').className='st';
+    $('ed-pick-st').textContent='Впишите имя и нажмите «Добавить». Фото '+c.dataset.file+'.png уже в репозитории, загружать его не нужно.';
+    return;
+  }
+  setSpeaker(PICK_N, c.dataset.name, c.dataset.file);
+  closePicker();
+});
+$('ed-pick-add').addEventListener('click',async ()=>{
+  const nameEl=$('ed-pick-name'), st=$('ed-pick-st'), imgEl=$('ed-pick-img'), btn=$('ed-pick-add');
+  const name=nameEl.value.trim();
+  if(!name){ st.className='st err'; st.textContent='Нужно имя спикера.'; nameEl.focus(); return; }
+  const file=imgEl.files && imgEl.files[0];
+  /* Файл: выбранное фото без имени, иначе — транслит фамилии. Пишем его и без фото:
+     если картинку загрузят позже из панели, имя файла уже будет стоять правильное,
+     а до тех пор на странице инициалы — как у всех спикеров без фото. */
+  const slug=slugOK(nameEl.dataset.file||'') || slugFromName(name);
+  if(file){
+    if(!slug){ st.className='st err'; st.textContent='Не смог сделать имя файла из фамилии — впишите его латиницей в поле «файл» в панели и загрузите фото там.'; return; }
+    st.className='st'; st.textContent='Загружаю '+slug+'.png…'; btn.disabled=true;
+    try{ await uploadAvatarFile(file, slug); }
+    catch(err){
+      console.warn('avatar upload failed:', err);
+      st.className='st err'; st.textContent='Фото не загрузилось: '+err.message; btn.disabled=false; return;
+    }
+  }
+  if(ORPHANS) ORPHANS=ORPHANS.filter(f=>f!==slug);
+  setSpeaker(PICK_N, name, slug);
+  resetPickForm();
+  closePicker();
+});
+$('ed-pick-name').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); $('ed-pick-add').click(); } });
+$('ed-pick-q').addEventListener('input',renderPicker);
+$('ed-pick-close').addEventListener('click',closePicker);
+$('ed-pick').addEventListener('click',e=>{ if(e.target.id==='ed-pick') closePicker(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && $('ed-pick').classList.contains('on')) closePicker(); });
+document.querySelectorAll('#ed-panel .pick').forEach(b=>b.addEventListener('click',()=>openPicker(parseInt(b.dataset.n,10))));
 
 document.getElementById('stage').addEventListener('click',e=>{
   if(!editMode) return;
