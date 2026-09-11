@@ -57,7 +57,10 @@ body{font-family:'CoFoSchedule','Inter',system-ui,-apple-system,'Segoe UI',Robot
 .title{font-size:20px;line-height:24px;letter-spacing:-.6px;font-weight:500;font-variation-settings:'wght' 500,'slnt' 0;width:100%;overflow-wrap:break-word;}
 .title.sm{font-size:18px;letter-spacing:-.54px;}
 .title span{display:block;}
-.foot{display:flex;align-items:center;gap:12px;}
+.foot{display:flex;align-items:center;gap:12px;min-width:0;}
+/* Имя не переносится: подвал фиксированной высоты, иначе длинное имя ломает ячейку. */
+.foot .name{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.foot.two .name{font-size:15px;line-height:20px;letter-spacing:-.3px;}
 .avas{display:flex;flex:none;}
 .avas .ava + .ava{margin-left:-13px;}
 .ava{position:relative;width:40px;height:40px;border-radius:20px;border:2px solid rgba(11,32,63,.1);
@@ -65,7 +68,7 @@ body{font-family:'CoFoSchedule','Inter',system-ui,-apple-system,'Segoe UI',Robot
 .ava .ini{font-size:13px;font-weight:500;font-variation-settings:'wght' 500,'slnt' 0;color:#0B203F;}
 .ava img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;display:block;}
 .name{font-size:18px;line-height:24px;letter-spacing:-.36px;font-weight:400;font-variation-settings:'wght' 400,'slnt' 0;}
-.name span{display:block;}
+.name span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
 /* ---- themes ---- */
 .green{background:var(--green);color:#fff;}
@@ -140,9 +143,28 @@ body.editing .cell:hover{outline:3px solid #39AA5D;outline-offset:-3px;border-ra
 #ed-panel .quick button:hover,#ed-panel .cp button:hover{background:#E3E8EE;}
 #ed-panel .quick button.g{background:#E8F4EC;color:#237A41;}
 #ed-panel .quick button.g:hover{background:#D7ECDD;}
-#ed-panel .cp{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-#ed-panel .cp button:disabled{opacity:.45;cursor:default;}
-#ed-panel .cp .clip{font-size:12px;color:#9AA1AB;flex:1;min-width:100%;line-height:1.35;}
+#ed-panel .lbl{font-size:12px;color:#9AA1AB;margin-bottom:-6px;}
+#ed-panel .quick.times button{padding:5px 9px;font-size:12.5px;}
+#ed-panel .f .quick{margin-top:6px;}
+/* Буфер дня — иконки в шапке, с рамкой и на белом: не путаются с чипсами шаблонов. */
+#ed-panel .ic{border:1px solid #D5DBE1;background:#fff;color:#292B32;width:32px;height:32px;border-radius:8px;
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;}
+#ed-panel .ic:hover{background:#F0F3F6;}
+#ed-panel .ic:disabled{opacity:.35;cursor:default;}
+#ed-panel .ic svg{width:17px;height:17px;}
+#ed-panel .clip{font-size:12px;color:#9AA1AB;line-height:1.35;min-height:16px;margin-top:-6px;}
+#ed-panel .clip.ok{color:#39AA5D;}
+/* Слот спикера: фото, имя и две кнопки. Полей «имя» и «файл» больше нет — всё через окно. */
+.spslot{display:flex;align-items:center;gap:8px;border:1px solid #E7EBEF;border-radius:10px;padding:6px 8px;}
+.spslot .who{flex:1;display:flex;align-items:center;gap:8px;min-width:0;cursor:pointer;}
+.spslot .who .ava{flex:none;width:32px;height:32px;border-radius:16px;}
+.spslot .who .ava .ini{font-size:12px;}
+.spslot .nm{font-size:14px;color:#292B32;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.spslot .nm.none{color:#9AA1AB;}
+.spslot button{border:0;border-radius:8px;padding:7px 10px;font-size:13px;font-weight:500;cursor:pointer;
+  background:#F0F3F6;color:#292B32;font-family:inherit;white-space:nowrap;}
+.spslot button:hover{background:#E3E8EE;}
+.spslot .rm{padding:7px 9px;color:#6B7280;}
 .ed-hd{display:flex;align-items:center;gap:8px;}
 .ed-hd h4{flex:1;}
 .ed-x{border:0;background:#F0F3F6;color:#292B32;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;}
@@ -167,14 +189,26 @@ body.editing .m-del:hover{background:rgba(242,27,27,.16);}
 #ed-pick{position:fixed;inset:0;z-index:10001;background:rgba(20,22,28,.55);display:none;
   align-items:center;justify-content:center;font-family:'CoFoSchedule','Inter',system-ui,sans-serif;}
 #ed-pick.on{display:flex;}
-#ed-pick .box{background:#fff;border-radius:16px;padding:22px;width:560px;max-width:calc(100vw - 24px);max-height:84vh;
+#ed-pick .box{background:#fff;border-radius:16px;padding:22px;width:760px;max-width:calc(100vw - 24px);max-height:88vh;
   display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.3);}
 #ed-pick h4{font-size:19px;font-weight:500;color:#292B32;}
 #ed-pick input{width:100%;padding:9px 11px;border:1px solid #D5DBE1;border-radius:9px;font-size:15px;font-family:inherit;}
-#ed-pick .grid{overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;min-height:80px;padding:2px;}
-.pcard{display:flex;align-items:center;gap:10px;text-align:left;border:1px solid #E7EBEF;border-radius:10px;
-  padding:8px 10px;background:#fff;cursor:pointer;font-family:inherit;min-width:0;}
-.pcard:hover{background:#F0F3F6;}
+#ed-pick .grid{overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;min-height:80px;padding:2px;align-content:start;}
+.pcard{display:flex;flex-direction:column;gap:6px;text-align:left;border:1px solid #E7EBEF;border-radius:10px;
+  padding:8px 10px;background:#fff;font-family:inherit;min-width:0;}
+.pcard .main{display:flex;align-items:center;gap:10px;min-width:0;cursor:pointer;}
+.pcard:hover{background:#F7F9FA;}
+.pcard.open{background:#F0F3F6;border-color:#D5DBE1;}
+.pcard .more{flex:none;border:0;background:transparent;color:#9AA1AB;width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:16px;line-height:1;}
+.pcard .more:hover{background:#E3E8EE;color:#292B32;}
+.pcard .acts{display:flex;flex-wrap:wrap;gap:5px;padding-top:4px;border-top:1px solid #E7EBEF;}
+/* Специфичность: .pcard .acts{display:flex} иначе перебивает браузерное [hidden]. */
+.pcard .acts[hidden]{display:none;}
+.pcard .acts button{border:0;border-radius:7px;padding:5px 9px;font-size:12px;font-weight:500;cursor:pointer;
+  background:#fff;color:#292B32;border:1px solid #D5DBE1;font-family:inherit;}
+.pcard .acts button:hover{background:#F0F3F6;}
+.pcard .acts button.danger{color:#D8302F;}
+.pcard .acts button:disabled{opacity:.45;cursor:default;}
 .pcard .ava{flex:none;width:44px;height:44px;border-radius:22px;}
 .pcard .ava .ini{font-size:14px;}
 .pcard .nm{font-size:14px;font-weight:500;color:#292B32;line-height:1.25;min-width:0;overflow-wrap:anywhere;}
@@ -192,9 +226,6 @@ body.editing .m-del:hover{background:rgba(242,27,27,.16);}
 #ed-pick .st{font-size:12px;color:#9AA1AB;min-height:16px;line-height:1.35;}
 #ed-pick .st.ok{color:#39AA5D;}
 #ed-pick .st.err{color:#F21B1B;}
-#ed-panel .row .pick{flex:none;align-self:flex-end;border:0;border-radius:8px;padding:9px 10px;font-size:13px;font-weight:500;
-  cursor:pointer;background:#F0F3F6;color:#292B32;font-family:inherit;white-space:nowrap;}
-#ed-panel .row .pick:hover{background:#E3E8EE;}
 /* align-items у кнопки в браузерных стилях — center, из-за чего колонка центруется */
 .hrow{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;
   width:100%;cursor:pointer;border:1px solid #E7EBEF;border-radius:10px;padding:10px 12px;
@@ -252,11 +283,11 @@ body.editing .m-del:hover{background:rgba(242,27,27,.16);}
   <div class="ed-hd"><h4 id="ed-pick-title">Спикер</h4><button class="ed-x" id="ed-pick-close" title="Закрыть">✕</button></div>
   <input id="ed-pick-q" placeholder="Найти по имени" autocomplete="off">
   <div class="grid" id="ed-pick-grid"></div>
+  <div class="st" id="ed-pick-st"></div>
   <div class="add">
-    <div class="hint">Новый спикер — впишите имя и, если есть, выберите фото: оно обрежется в квадрат и сразу уйдёт в репозиторий.</div>
-    <div class="row"><input type="text" id="ed-pick-name" placeholder="Имя Фамилия" autocomplete="off"><button type="button" id="ed-pick-add">Добавить</button></div>
+    <div class="hint">Новый спикер: имя и, если есть, фото — оно обрежется в квадрат и сразу уйдёт в репозиторий. Имя файла делается из фамилии, но можно задать своё.</div>
+    <div class="row"><input type="text" id="ed-pick-name" placeholder="Имя Фамилия" autocomplete="off"><input type="text" id="ed-pick-file" placeholder="имя файла (латиницей)" autocomplete="off" style="flex:.6"><button type="button" id="ed-pick-add">Добавить</button></div>
     <input type="file" id="ed-pick-img" accept="image/*">
-    <div class="st" id="ed-pick-st"></div>
   </div>
 </div></div>
 <div id="ed-bar">
@@ -270,14 +301,13 @@ body.editing .m-del:hover{background:rgba(242,27,27,.16);}
   <button class="exit" id="ed-exit">Выйти</button>
 </div>
 <div id="ed-panel">
-  <div class="ed-hd"><h4 id="ed-day">День</h4><button class="ed-x" id="ed-close" title="Закрыть">✕</button></div>
+  <div class="ed-hd"><h4 id="ed-day">День</h4>
+    <button type="button" class="ic" id="ed-copy" title="Копировать день (Ctrl+C)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
+    <button type="button" class="ic" id="ed-paste" title="Вставить скопированный день (Ctrl+V)" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="M8 12h8M8 16h5"/></svg></button>
+    <button class="ed-x" id="ed-close" title="Закрыть">✕</button></div>
+  <div class="clip" id="ed-clip"></div>
+  <div class="lbl">Шаблон дня</div>
   <div class="quick" id="ed-quick"></div>
-  <div class="cp">
-    <button type="button" id="ed-copy">Копировать день</button>
-    <button type="button" id="ed-paste" disabled>Вставить</button>
-    <span class="clip" id="ed-clip"></span>
-  </div>
-  <datalist id="ed-speakers"></datalist>
   <div class="f"><label>Тип</label>
     <select id="ed-type">
       <option value="">Пусто</option>
@@ -286,24 +316,17 @@ body.editing .m-del:hover{background:rgba(242,27,27,.16);}
       <option value="y">Важная дата (жёлтый)</option>
       <option value="k">Чёрная пятница</option>
     </select></div>
-  <div class="f"><label>Время</label><input id="ed-time" placeholder="17:00 — 19:00 / Весь день"></div>
+  <div class="f"><label>Время</label><input id="ed-time" placeholder="17:00 — 19:00 / Весь день">
+    <div class="quick times" id="ed-times"></div></div>
   <div class="f"><label>Бейдж</label><input id="ed-badge" placeholder="Вебинар / Текст / Выпускной"></div>
   <div class="chk"><input type="checkbox" id="ed-nb"><span>Без бейджа</span></div>
   <div class="f"><label>Заголовок (перенос строки = новая строка)</label><textarea id="ed-title"></textarea></div>
-  <div class="row">
-    <div class="f"><label>Спикер 1 — имя</label><input id="ed-sp1n" placeholder="Имя Фамилия" list="ed-speakers" autocomplete="off"></div>
-    <div class="f"><label>файл</label><input id="ed-sp1f" placeholder="ermakov"></div>
-    <button type="button" class="pick" data-n="1" title="Выбрать из уже известных или добавить нового">Выбрать…</button>
+  <div class="f"><label>Спикеры</label>
+    <div class="spslot" id="ed-slot1"><div class="who" data-n="1"></div><button type="button" class="pick" data-n="1">Выбрать…</button><button type="button" class="rm" data-n="1" title="Убрать спикера" hidden>✕</button></div>
   </div>
-  <div class="f"><label>Фото спикера 1 — обрежется в квадрат 120×120</label>
-    <input type="file" id="ed-sp1img" accept="image/*"><span class="up" id="ed-sp1st"></span></div>
-  <div class="row">
-    <div class="f"><label>Спикер 2 — имя</label><input id="ed-sp2n" placeholder="(если двое)" list="ed-speakers" autocomplete="off"></div>
-    <div class="f"><label>файл</label><input id="ed-sp2f" placeholder=""></div>
-    <button type="button" class="pick" data-n="2" title="Выбрать из уже известных или добавить нового">Выбрать…</button>
-  </div>
-  <div class="f"><label>Фото спикера 2 — обрежется в квадрат 120×120</label>
-    <input type="file" id="ed-sp2img" accept="image/*"><span class="up" id="ed-sp2st"></span></div>
+  <div class="spslot" id="ed-slot2"><div class="who" data-n="2"></div><button type="button" class="pick" data-n="2">Выбрать…</button><button type="button" class="rm" data-n="2" title="Убрать спикера" hidden>✕</button></div>
+  <input type="hidden" id="ed-sp1n"><input type="hidden" id="ed-sp1f">
+  <input type="hidden" id="ed-sp2n"><input type="hidden" id="ed-sp2f">
   <div class="chk"><input type="checkbox" id="ed-sm"><span>Мелкий шрифт заголовка</span></div>
   <div class="chk"><input type="checkbox" id="ed-deco"><span>Спец-визуал (workshop.png + свечение)</span></div>
   <div class="btns">
@@ -311,9 +334,9 @@ body.editing .m-del:hover{background:rgba(242,27,27,.16);}
     <button class="clear" id="ed-clear">Очистить</button>
   </div>
   <div class="hint">«Применить» — обновляет страницу сразу. «Опубликовать» вверху — сохранить на сервере, чтобы правки увидели все.<br>
-    Шаблоны сверху заполняют всё: тип, время, бейдж, название-заглушку «Тема уточняется» и случайного спикера из уже известных. Поправьте, что нужно, и «Применить».
-    «Копировать день» берёт применённое занятие, «Вставить» кладёт его в открытый день сразу; с клавиатуры — Ctrl+C и Ctrl+V, когда курсор не в поле.<br>
-    Спикер подставляется по имени из уже введённых — начните печатать. Фото загружается в репозиторий сразу при выборе файла — отдельно публиковать его не нужно. Имя файла берётся из поля «файл», а если оно пустое — из фамилии спикера.</div>
+    Шаблон заполняет всё: тип, бейдж, название-заглушку «Тема уточняется» и случайного спикера. Время — чипсами под полем. Поправьте, что нужно, и «Применить».<br>
+    Иконки в шапке — копировать день и вставить его в другой; с клавиатуры Ctrl+C и Ctrl+V, когда курсор не в поле.
+    Спикеры, их фото и имена правятся в окне «Выбрать…»; фото уходит в репозиторий сразу, отдельно публиковать не нужно.</div>
 </div>
 
 <script>
@@ -415,6 +438,8 @@ let DATA={};
 /* Название этого расписания. Пустое — подписи нет: номер из адреса подставлять нельзя,
    он говорит лишь о том, в каком файле лежат данные. */
 let TITLE='';
+/* Растёт при замене фото: браузер иначе показывает старую картинку из кэша. */
+let AVA_V=0;
 const BASE_TITLE=document.title;
 /* Состояние загрузки — от него зависит, что написать на месте пустого расписания.
    «Не удалось загрузить» и «расписание ещё не собрали» — разные сообщения. */
@@ -486,8 +511,9 @@ function avaHTML(sp){
   const ini='<span class="ini">'+initials(sp[0])+'</span>';
   const f=slugOK(sp[1]);
   if(!f) return '<div class="ava">'+ini+'</div>';
-  return '<div class="ava">'+ini+'<img src="avatars/'+f+'.png" alt="" loading="lazy"'
-    +' data-raw="'+RAW_BASE+'avatars/'+f+'.png" onerror="imgFallback(this)"></div>';
+  const v=AVA_V?'?v='+AVA_V:'';
+  return '<div class="ava">'+ini+'<img src="avatars/'+f+'.png'+v+'" alt="" loading="lazy"'
+    +' data-raw="'+RAW_BASE+'avatars/'+f+'.png'+v+'" onerror="imgFallback(this)"></div>';
 }
 function titleHTML(ttl,sm){const cls='title'+(sm?' sm':'');const arr=Array.isArray(ttl)?ttl:[ttl];return '<div class="'+cls+'">'+arr.map(l=>'<span>'+typo(l)+'</span>').join('')+'</div>';}
 function footHTML(sp){if(sp.length>1){return '<div class="foot two"><div class="avas">'+sp.map(avaHTML).join('')+'</div><div class="name">'+sp.map(s=>'<span>'+s[0]+'</span>').join('')+'</div></div>';}return '<div class="foot">'+avaHTML(sp[0])+'<span class="name">'+sp[0][0]+'</span></div>';}
@@ -619,7 +645,7 @@ function enterEdit(){
   document.body.classList.add('editing');
   $('ed-bar').classList.add('on');
   render(); fit();
-  loadMainSpeakers();
+  loadSpeakers();
 }
 function exitEdit(){ editMode=false; document.body.classList.remove('editing'); $('ed-bar').classList.remove('on'); $('ed-panel').classList.remove('on'); sel=null; }
 function saveWIP(){ try{localStorage.setItem(WIP_KEY,JSON.stringify(pack()));}catch(e){} }
@@ -643,8 +669,7 @@ function openPanel(mName,d){
   $('ed-sp2n').value=sp[1]?sp[1][0]:''; $('ed-sp2f').value=sp[1]?sp[1][1]:'';
   $('ed-sm').checked=!!it.sm;
   $('ed-deco').checked=!!(it.deco||it.viz);
-  ['1','2'].forEach(n=>{ const st=$('ed-sp'+n+'st'); st.textContent=''; st.className='up'; $('ed-sp'+n+'f').dataset.auto=''; });
-  refreshSpeakers(); refreshClipUI();
+  rebuildSpeakers(); renderSlots(); renderTimes(); refreshClipUI();
   $('ed-panel').classList.add('on');
 }
 function applyPanel(){
@@ -674,18 +699,15 @@ function clearDay(){
   $('ed-panel').classList.remove('on'); sel=null;
 }
 /* ==================== БЫСТРЫЙ ВВОД ==================== */
-/* Шаблоны — четыре формы, из которых состоит почти всё расписание: за четыре месяца
-   живого расписания других не появилось. Шаблон заполняет все поля целиком — тип, время,
-   бейдж, название-заглушку и случайного спикера из уже известных, — чтобы день можно
-   было поставить одним кликом и «Применить», а название поправить потом. Заглушка
-   «Тема уточняется» выбрана так, чтобы не стыдно было и опубликовать, если забыли.
-   У «Подготовки к вебинару» спикера нет: в живом расписании его не было ни разу.
-   Менять список — здесь, в коде. */
+/* Шаблоны — три формы, из которых состоит почти всё расписание. Шаблон заполняет день
+   целиком: тип, бейдж, название-заглушку и случайного спикера из известных. Время вебинару
+   шаблон не ставит: вебинаров в 10:00 и в 17:00 примерно поровну, поэтому время выбирают
+   отдельно, чипсами под полем. Заглушка «Тема уточняется» такая, чтобы не стыдно было
+   и опубликовать. У «Подготовки к вебинару» спикера нет — в живом расписании не было ни разу. */
 const PLACEHOLDER='Тема уточняется';
 const PRESETS=[
-  {label:'Вебинар 17:00', cls:'g', set:{type:'g', t:'17:00 — 19:00', bt:'Вебинар', ttl:PLACEHOLDER, speaker:true}},
-  {label:'Вебинар 10:00', cls:'g', set:{type:'g', t:'10:00 — 12:00', bt:'Вебинар', ttl:PLACEHOLDER, speaker:true}},
-  {label:'Текст',         cls:'',  set:{type:'s', t:'', bt:'Текст', ttl:PLACEHOLDER, speaker:true}},
+  {label:'Вебинар', cls:'g', set:{type:'g', t:'', bt:'Вебинар', ttl:PLACEHOLDER, speaker:true}},
+  {label:'Текст',   cls:'',  set:{type:'s', t:'', bt:'Текст',   ttl:PLACEHOLDER, speaker:true}},
   {label:'Подготовка к вебинару', cls:'', set:{type:'s', t:'', bt:'Текст', ttl:'Подготовка к вебинару', speaker:false}},
 ];
 function randomSpeaker(){
@@ -701,8 +723,9 @@ function applyPreset(p){
   $('ed-nb').checked=false;
   $('ed-title').value=p.set.ttl||'';
   const sp=p.set.speaker?randomSpeaker():null;
-  $('ed-sp1n').value=sp?sp[0]:''; $('ed-sp1f').value=sp?sp[1]:''; $('ed-sp1f').dataset.auto=sp?'1':'';
-  $('ed-sp2n').value=''; $('ed-sp2f').value=''; $('ed-sp2f').dataset.auto='';
+  $('ed-sp1n').value=sp?sp[0]:''; $('ed-sp1f').value=sp?sp[1]:'';
+  $('ed-sp2n').value=''; $('ed-sp2f').value='';
+  renderSlots();
   $('ed-title').focus(); $('ed-title').select();
 }
 PRESETS.forEach(p=>{
@@ -712,38 +735,111 @@ PRESETS.forEach(p=>{
   $('ed-quick').appendChild(b);
 });
 
-/* Спикеры для автоподстановки: имя → файл аватарки. Собираются из самого расписания,
-   а не из отдельного справочника — справочник пришлось бы вести. Кто встретился первым,
-   тот и задаёт файл. В черновике и на втором адресе своих спикеров может ещё не быть,
-   поэтому туда подмешиваются спикеры основного адреса. */
-let SPEAKERS={};
+/* Время: самые частые значения из этого расписания, добитые типовыми до четырёх. */
+const DEFAULT_TIMES=['17:00 — 19:00','10:00 — 12:00','Время уточняется','Весь день'];
+function topTimes(){
+  const c={};
+  Object.values(DATA).forEach(days=>Object.values(days||{}).forEach(it=>{ if(it&&it.t) c[it.t]=(c[it.t]||0)+1; }));
+  const seen=Object.keys(c).sort((a,b)=>c[b]-c[a]);
+  DEFAULT_TIMES.forEach(t=>{ if(!seen.includes(t)) seen.push(t); });
+  return seen.slice(0,4);
+}
+function renderTimes(){
+  const box=$('ed-times'); box.innerHTML='';
+  topTimes().forEach(t=>{
+    const b=document.createElement('button'); b.type='button'; b.textContent=t;
+    b.addEventListener('click',()=>{ $('ed-time').value=t; });
+    box.appendChild(b);
+  });
+}
+
+/* ==================== СПИКЕРЫ ==================== */
+/* Список спикеров живёт в assets/speakers.json: имя и файл фото. К нему подмешиваются
+   спикеры из занятий — этого расписания и основного, — чтобы никто не пропал, даже если
+   в файле его ещё нет. Первое же сохранение списка записывает туда всех: так он сходится
+   сам, без миграции. Занятия по-прежнему хранят пару [имя, файл] — вёрстка не меняется. */
+const SPEAKERS_FILE='speakers.json';
+let SPEAKERS={};       // имя → файл: объединение файла и занятий
+let REG=null;          // содержимое speakers.json или null, если ещё не читали
+let MAIN_DATA=null;    // занятия основного адреса — знать, кто где используется
+
+async function fetchJSON(url){
+  const ctl=new AbortController(); const timer=setTimeout(()=>ctl.abort(),5000);
+  try{
+    const r=await fetch(url+'?ts='+Date.now(),{cache:'no-store',signal:ctl.signal});
+    if(r.status===404) return {missing:true};
+    if(!r.ok) return null;
+    return {json:await r.json()};
+  }catch(e){ return null; }
+  finally{ clearTimeout(timer); }
+}
 function collectSpeakers(data){
   Object.values(data||{}).forEach(days=>Object.values(days||{}).forEach(it=>
     (it&&it.sp||[]).forEach(s=>{ if(s&&s[0]&&!(s[0] in SPEAKERS)) SPEAKERS[s[0]]=s[1]||''; })));
 }
-function refreshSpeakers(){
+function rebuildSpeakers(){
+  SPEAKERS={};
+  (REG||[]).forEach(sp=>{ if(sp&&sp.name) SPEAKERS[sp.name]=sp.file||''; });
   collectSpeakers(DATA);
-  const dl=$('ed-speakers'); dl.innerHTML='';
-  Object.keys(SPEAKERS).sort((a,b)=>a.localeCompare(b,'ru')).forEach(n=>{
-    const o=document.createElement('option'); o.value=n; dl.appendChild(o);
+  if(MAIN_DATA) collectSpeakers(MAIN_DATA);
+}
+async function loadSpeakers(){
+  const res=await fetchJSON(RAW_BASE+SPEAKERS_FILE) || await fetchJSON(SPEAKERS_FILE);
+  if(res && res.json && Array.isArray(res.json.speakers)) REG=res.json.speakers.filter(x=>x&&x.name);
+  else if(res && res.missing) REG=[];
+  if(TEST_MODE || STREAM>1){
+    try{ const nd=await fetchStreamSchedule(1); if(nd) MAIN_DATA=nd.data; }
+    catch(e){ console.warn('main schedule for speakers failed:', e); }
+  }
+  rebuildSpeakers();
+}
+async function saveSpeakers(message){
+  /* Пишем объединение: спикеры из занятий тоже попадают в файл — так список сходится. */
+  const list=Object.keys(SPEAKERS).sort((a,b)=>a.localeCompare(b,'ru')).map(n=>({name:n,file:SPEAKERS[n]||''}));
+  await ghPutFile('assets/'+SPEAKERS_FILE, b64utf8(JSON.stringify({speakers:list},null,2)), 'speakers: '+message+' ('+stamp()+')');
+  REG=list;
+}
+/* Где спикер используется: в скольких занятиях этого расписания и есть ли он в основном. */
+function usage(name){
+  let n=0;
+  Object.values(DATA).forEach(days=>Object.values(days||{}).forEach(it=>{ if(it&&it.sp&&it.sp.some(x=>x[0]===name)) n++; }));
+  return n;
+}
+function usedInMain(name){
+  return !!MAIN_DATA && Object.values(MAIN_DATA).some(days=>Object.values(days||{}).some(it=>it&&it.sp&&it.sp.some(x=>x[0]===name)));
+}
+/* Переименовать или сменить файл во всех занятиях этого расписания. Возвращает число правок. */
+function updateInLessons(oldName,newName,file){
+  let n=0;
+  Object.values(DATA).forEach(days=>Object.values(days||{}).forEach(it=>(it&&it.sp||[]).forEach(x=>{
+    if(x[0]===oldName){ x[0]=newName; if(file!==undefined) x[1]=file; n++; }
+  })));
+  return n;
+}
+
+/* Слоты спикеров в панели: фото, имя, кнопки. Значения живут в скрытых полях
+   ed-spNn / ed-spNf — их читают applyPanel и openPanel, как и раньше. */
+function renderSlots(){
+  [1,2].forEach(n=>{
+    const name=$('ed-sp'+n+'n').value, file=$('ed-sp'+n+'f').value;
+    $('ed-slot'+n).querySelector('.who').innerHTML=name
+      ? avaHTML([name,file])+'<span class="nm">'+esc(name)+'</span>'
+      : '<div class="ava"><span class="ini">'+n+'</span></div><span class="nm none">'+(n===1?'Спикер не выбран':'Второй спикер, если двое')+'</span>';
+    $('ed-slot'+n).querySelector('.rm').hidden=!name;
   });
 }
-async function loadMainSpeakers(){
-  if(!TEST_MODE && STREAM===1) return;
-  try{ const nd=await fetchStreamSchedule(1); if(nd){ collectSpeakers(nd.data); refreshSpeakers(); } }
-  catch(e){ console.warn('main speakers failed:', e); }
+/* Записать выбор в поля панели. Если тип дня уже выбран — применяем сразу:
+   спикер виден на странице без лишнего клика. */
+function setSpeaker(n,name,file){
+  $('ed-sp'+n+'n').value=name||''; $('ed-sp'+n+'f').value=file||'';
+  if(name && !(name in SPEAKERS)) SPEAKERS[name]=file||'';
+  renderSlots();
+  if($('ed-type').value) applyPanel();
 }
-function wireSpeaker(n){
-  const name=$('ed-sp'+n+'n'), file=$('ed-sp'+n+'f');
-  name.addEventListener('input',()=>{
-    const f=SPEAKERS[name.value.trim()];
-    /* Файл подставляем, только если поле пустое или его заполнили мы же:
-       вписанное руками не трогаем. */
-    if(f!==undefined && (!file.value || file.dataset.auto==='1')){ file.value=f; file.dataset.auto='1'; }
-  });
-  file.addEventListener('input',()=>{ file.dataset.auto=''; });
-}
-wireSpeaker(1); wireSpeaker(2);
+document.querySelectorAll('#ed-panel .spslot .pick, #ed-panel .spslot .who').forEach(el=>
+  el.addEventListener('click',()=>openPicker(parseInt(el.dataset.n,10))));
+document.querySelectorAll('#ed-panel .spslot .rm').forEach(b=>
+  b.addEventListener('click',()=>setSpeaker(parseInt(b.dataset.n,10),'','')));
 
 /* Буфер дня. Копируется применённое занятие, а не содержимое полей: то, что видно
    на странице, и есть то, что скопируется. Живёт в sessionStorage — переживает
@@ -758,21 +854,20 @@ function dayLabel(it){
 function refreshClipUI(){
   const c=getClip();
   $('ed-paste').disabled=!c;
-  $('ed-clip').textContent=c?'В буфере: '+dayLabel(c):'';
+  const clip=$('ed-clip'); clip.className='clip';
+  clip.textContent=c?'В буфере: '+dayLabel(c):'';
   const cur=sel&&(DATA[sel.m]||{})[sel.d];
   $('ed-copy').disabled=!(cur&&cur.type);
 }
-function flashBtn(b,text){
-  if(!b.dataset.orig) b.dataset.orig=b.textContent;
-  b.textContent=text;
-  setTimeout(()=>{ b.textContent=b.dataset.orig; }, 1500);
+function flashClip(text){
+  const clip=$('ed-clip'); clip.className='clip ok'; clip.textContent=text;
+  setTimeout(refreshClipUI, 1500);
 }
 function copyDay(){
   const it=sel&&(DATA[sel.m]||{})[sel.d];
   if(!it||!it.type) return;
   try{ sessionStorage.setItem(CLIP_KEY,JSON.stringify(it)); }catch(e){}
-  refreshClipUI();
-  flashBtn($('ed-copy'),'Скопировано ✓');
+  flashClip('Скопировано: '+dayLabel(it));
 }
 function pasteDay(){
   const c=getClip(); if(!c||!sel) return;
@@ -783,7 +878,7 @@ function pasteDay(){
   DATA[sel.m]=DATA[sel.m]||{}; DATA[sel.m][sel.d]=JSON.parse(JSON.stringify(c));
   saveWIP(); render(); fit();
   openPanel(sel.m, sel.d);
-  flashBtn($('ed-paste'),'Вставлено ✓');
+  flashClip('Вставлено ✓');
 }
 $('ed-copy').addEventListener('click',copyDay);
 $('ed-paste').addEventListener('click',pasteDay);
@@ -1143,61 +1238,66 @@ async function uploadAvatarFile(file, slug){
   const b64=await squarePngBase64(file,120);
   await ghPutFile('assets/avatars/'+slug+'.png', b64, 'avatar: '+slug+' ('+stamp()+')');
 }
-async function onPickAvatar(which){
-  const inp=$('ed-sp'+which+'img'), st=$('ed-sp'+which+'st');
-  const file=inp.files && inp.files[0]; if(!file) return;
-  const slugField=$('ed-sp'+which+'f'), nameField=$('ed-sp'+which+'n');
-  const slug=slugOK(slugField.value.trim()) || slugFromName(nameField.value);
-  if(!slug){
-    st.className='up err'; st.textContent='сначала впиши имя спикера — имя файла сделаю из фамилии';
-    inp.value=''; return;
-  }
-  st.className='up'; st.textContent='загружаю '+slug+'.png…';
-  try{
-    await uploadAvatarFile(file, slug);
-    slugField.value=slug;
-    st.className='up ok';
-    if($('ed-type').value){
-      applyPanel();
-      st.textContent='фото загружено ✓ — осталось нажать «Опубликовать»';
-    }else{
-      st.textContent='фото загружено ✓ — выбери тип дня и нажми «Применить»';
-    }
-  }catch(err){
-    console.warn('avatar upload failed:', err);
-    st.className='up err'; st.textContent='не вышло: '+err.message;
-  }finally{ inp.value=''; }
+/* Удалить файл из репозитория. Для удаления GitHub требует sha текущего содержимого. */
+async function ghDeleteFile(path, message){
+  if(!GH_TOKEN || GH_TOKEN.indexOf('ВСТАВЬ')>=0) throw new Error('токен GitHub не настроен на странице (GH_TOKEN_PARTS)');
+  const api='https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+'/contents/'+path;
+  const headers=ghHeaders();
+  const gr=await ghFetch(api+'?ref='+GH_BRANCH,{headers,cache:'no-store'});
+  if(gr.status===404) return false;                 // нечего удалять — не ошибка
+  if(!gr.ok) throw new Error('не смог прочитать файл: '+ghErrText(gr.status));
+  const sha=(await gr.json()).sha;
+  const r=await ghFetch(api,{method:'DELETE',headers:{...headers,'Content-Type':'application/json'},body:JSON.stringify({message,sha,branch:GH_BRANCH})});
+  if(!r.ok) throw new Error(ghErrText(r.status));
+  return true;
 }
 
-/* ==================== ВЫБОР СПИКЕРА ==================== */
-/* Окно со всеми, кто уже есть. Имена и файлы берутся из расписаний (SPEAKERS), а фото,
-   которые лежат в репозитории без имени — загрузили и не применили, — из каталога
-   avatars/ через API. Отдельного справочника спикеров нет намеренно: он стал бы третьим
-   источником правды рядом с расписанием и каталогом фото и расходился бы с обоими. */
-let PICK_N=1;        // для какого спикера открыто окно
+/* ==================== ОКНО СПИКЕРОВ ==================== */
+/* Здесь и выбор, и правка: карточка — выбрать, «⋯» на карточке — фото, имя, удаление.
+   Фото без имени — файлы в avatars/, не привязанные ни к кому: загрузили и не применили
+   или спикеры прошлых версий. Их можно назвать или удалить. */
+let PICK_N=1;        // для какого слота открыто окно
 let ORPHANS=null;    // файлы в avatars/ без имени; null — ещё не спрашивали
+let OPEN_CARD=null;  // карточка с раскрытыми действиями: имя или 'orphan:'+файл
 async function listOrphanAvatars(){
   const items=await ghGet('/contents/assets/avatars');
   const used=new Set(Object.values(SPEAKERS).map(f=>String(f).toLowerCase()));
   return (Array.isArray(items)?items:[])
     .map(it=>it&&it.name).filter(n=>typeof n==='string' && /\.png$/i.test(n))
     .map(n=>n.replace(/\.png$/i,''))
-    .filter(s=>s!=='workshop' && !used.has(s.toLowerCase()))
+    .filter(x=>x!=='workshop' && !used.has(x.toLowerCase()))
     .sort();
 }
+function pickStatus(text,cls){ const st=$('ed-pick-st'); st.className='st'+(cls?' '+cls:''); st.textContent=text||''; }
 function pickCard(name,file,cls){
-  const b=document.createElement('button'); b.type='button'; b.className='pcard'+(cls?' '+cls:'');
-  b.dataset.name=name||''; b.dataset.file=file||'';
-  let ava, label, sub;
+  const d=document.createElement('div'); d.className='pcard'+(cls?' '+cls:'');
+  d.dataset.name=name||''; d.dataset.file=file||'';
+  const key=cls==='orphan'?'orphan:'+file:name;
+  let ava, label, sub, acts='';
   if(cls==='none'){ ava='<div class="ava"><span class="ini">—</span></div>'; label='Без спикера'; sub=''; }
-  else if(cls==='orphan'){ ava=avaHTML(['?',file]); label='Фото без имени'; sub=file+'.png · нажмите, чтобы дать имя'; }
-  else { ava=avaHTML([name,file]); label=name; sub=file?file+'.png':'без фото'; }
+  else if(cls==='orphan'){
+    ava=avaHTML(['?',file]); label='Фото без имени'; sub=esc(file)+'.png · нажмите, чтобы дать имя';
+    acts='<button type="button" data-act="delfile" class="danger">Удалить файл</button>';
+  } else {
+    const u=usage(name);
+    ava=avaHTML([name,file]); label=esc(name);
+    sub=(u?u+' '+plural(u,'занятие','занятия','занятий'):'не используется')+(file?' · '+esc(file)+'.png':' · без фото');
+    acts='<button type="button" data-act="photo">'+(file?'Заменить фото':'Загрузить фото')+'</button>'
+      +'<button type="button" data-act="rename">Переименовать</button>'
+      +(file?'<button type="button" data-act="delphoto">Убрать фото</button>':'')
+      +'<button type="button" data-act="del" class="danger">Удалить</button>'
+      +'<input type="file" accept="image/*" hidden>';
+  }
   /* В ячейках картинки ленивые, а окно рисуется до того, как показано: ленивая картинка
      в невидимом контейнере не грузится. В окне их два десятка — грузим сразу. */
   ava=ava.replace(' loading="lazy"',' loading="eager"');
-  b.innerHTML=ava+'<div class="nm">'+label+(sub?'<span class="sub">'+sub+'</span>':'')+'</div>';
-  return b;
+  d.innerHTML='<div class="main">'+ava+'<div class="nm">'+label+(sub?'<span class="sub">'+sub+'</span>':'')+'</div>'
+    +(acts?'<button type="button" class="more" title="Действия">⋯</button>':'')+'</div>'
+    +(acts?'<div class="acts"'+(OPEN_CARD===key?'':' hidden')+'>'+acts+'</div>':'');
+  if(OPEN_CARD===key) d.classList.add('open');
+  return d;
 }
+function plural(n,a,b,c){ const m10=n%10, m100=n%100; if(m10===1&&m100!==11) return a; if(m10>=2&&m10<=4&&(m100<12||m100>14)) return b; return c; }
 function renderPicker(){
   const q=$('ed-pick-q').value.trim().toLowerCase();
   const grid=$('ed-pick-grid'); grid.innerHTML='';
@@ -1211,18 +1311,19 @@ function renderPicker(){
 function resetPickForm(){
   const nameEl=$('ed-pick-name');
   nameEl.value=''; nameEl.dataset.file=''; nameEl.placeholder='Имя Фамилия';
-  $('ed-pick-img').value='';
-  $('ed-pick-st').textContent=''; $('ed-pick-st').className='st';
+  $('ed-pick-file').value=''; $('ed-pick-img').value='';
   $('ed-pick-add').disabled=false;
+  pickStatus('');
 }
 async function openPicker(n){
-  PICK_N=n;
+  PICK_N=n; OPEN_CARD=null;
   $('ed-pick-title').textContent='Спикер '+n;
   $('ed-pick-q').value='';
   resetPickForm();
-  refreshSpeakers(); renderPicker();
+  rebuildSpeakers(); renderPicker();
   $('ed-pick').classList.add('on');
   $('ed-pick-q').focus();
+  if(REG===null) { await loadSpeakers(); if($('ed-pick').classList.contains('on')) renderPicker(); }
   if(ORPHANS===null){
     /* Список показан сразу из того, что знаем; фото без имён дорисуются, когда ответит API.
        Без токена или без сети их просто не будет — окно от этого не ломается. */
@@ -1231,50 +1332,131 @@ async function openPicker(n){
     if($('ed-pick').classList.contains('on')) renderPicker();
   }
 }
-function closePicker(){ $('ed-pick').classList.remove('on'); }
-/* Записать выбор в поля панели. Если тип дня уже выбран — применяем сразу, как делает
-   загрузка фото: спикер виден на странице без лишнего клика. */
-function setSpeaker(n,name,file){
-  $('ed-sp'+n+'n').value=name||''; $('ed-sp'+n+'f').value=file||''; $('ed-sp'+n+'f').dataset.auto=file?'1':'';
-  if(name && !(name in SPEAKERS)) SPEAKERS[name]=file||'';
-  if($('ed-type').value) applyPanel();
+function closePicker(){ $('ed-pick').classList.remove('on'); OPEN_CARD=null; }
+
+/* После правки спикера: перерисовать всё, где он виден, и сохранить список.
+   Если список не сохранился — правка в занятиях остаётся, об этом честно говорим. */
+async function afterSpeakerChange(message){
+  saveWIP(); render(); fit(); renderSlots(); renderPicker();
+  try{ await saveSpeakers(message); pickStatus('Готово: '+message+'. Список спикеров сохранён.','ok'); }
+  catch(err){ console.warn('speakers save failed:', err); pickStatus('Правка на странице сделана, но список спикеров не сохранился: '+err.message,'err'); }
 }
-$('ed-pick-grid').addEventListener('click',e=>{
-  const c=e.target.closest('.pcard'); if(!c) return;
-  if(c.classList.contains('orphan')){
-    /* Фото без имени: само по себе спикером не станет — ведём в форму добавления с этим файлом. */
-    const nameEl=$('ed-pick-name');
-    nameEl.dataset.file=c.dataset.file;
-    nameEl.placeholder='Имя для фото '+c.dataset.file+'.png';
-    nameEl.focus();
-    $('ed-pick-st').className='st';
-    $('ed-pick-st').textContent='Впишите имя и нажмите «Добавить». Фото '+c.dataset.file+'.png уже в репозитории, загружать его не нужно.';
+async function cardAction(card,act,file){
+  const name=card.dataset.name, slug=card.dataset.file;
+  if(act==='delfile'){
+    if(!confirm('Удалить файл '+slug+'.png из репозитория? Вернуть его можно будет только через историю git.')) return;
+    pickStatus('Удаляю '+slug+'.png…');
+    try{ await ghDeleteFile('assets/avatars/'+slug+'.png','avatar: удалён '+slug+' ('+stamp()+')'); }
+    catch(err){ pickStatus('Не удалилось: '+err.message,'err'); return; }
+    ORPHANS=(ORPHANS||[]).filter(x=>x!==slug); OPEN_CARD=null; renderPicker(); pickStatus('Файл '+slug+'.png удалён.','ok');
     return;
   }
-  setSpeaker(PICK_N, c.dataset.name, c.dataset.file);
+  if(act==='photo'){
+    const target=slugOK(slug)||slugFromName(name);
+    if(!target){ pickStatus('Не смог сделать имя файла из фамилии — переименуйте спикера латиницей или задайте файл при добавлении.','err'); return; }
+    pickStatus('Загружаю '+target+'.png…');
+    try{ await uploadAvatarFile(file,target); }
+    catch(err){ pickStatus('Фото не загрузилось: '+err.message,'err'); return; }
+    AVA_V=Date.now();
+    SPEAKERS[name]=target; updateInLessons(name,name,target);
+    [1,2].forEach(n=>{ if($('ed-sp'+n+'n').value===name) $('ed-sp'+n+'f').value=target; });
+    await afterSpeakerChange('фото '+name);
+    return;
+  }
+  if(act==='rename'){
+    const nn=(prompt('Новое имя спикера:',name)||'').trim();
+    if(!nn||nn===name) return;
+    if(nn in SPEAKERS){ alert('Спикер с именем «'+nn+'» уже есть.'); return; }
+    SPEAKERS[nn]=SPEAKERS[name]; delete SPEAKERS[name];
+    const n=updateInLessons(name,nn);
+    [1,2].forEach(k=>{ if($('ed-sp'+k+'n').value===name) $('ed-sp'+k+'n').value=nn; });
+    OPEN_CARD=nn;
+    await afterSpeakerChange('переименован '+name+' → '+nn+(n?' в '+n+' '+plural(n,'занятии','занятиях','занятиях'):''));
+    return;
+  }
+  if(act==='delphoto'){
+    if(!confirm('Убрать фото у «'+name+'»? Файл '+slug+'.png удалится из репозитория, в занятиях останутся инициалы.')) return;
+    pickStatus('Удаляю '+slug+'.png…');
+    try{ await ghDeleteFile('assets/avatars/'+slug+'.png','avatar: удалён '+slug+' ('+stamp()+')'); }
+    catch(err){ pickStatus('Не удалилось: '+err.message,'err'); return; }
+    SPEAKERS[name]=''; updateInLessons(name,name,'');
+    [1,2].forEach(n=>{ if($('ed-sp'+n+'n').value===name) $('ed-sp'+n+'f').value=''; });
+    await afterSpeakerChange('убрано фото '+name);
+    return;
+  }
+  if(act==='del'){
+    const u=usage(name);
+    if(u){ alert('«'+name+'» стоит в '+u+' '+plural(u,'занятии','занятиях','занятиях')+' этого расписания.\n\nСначала уберите спикера из них — иначе занятия остались бы с именем, которого нет в списке.'); return; }
+    if(usedInMain(name)){ alert('«'+name+'» используется в расписании основного адреса. Удалять его отсюда нельзя — откройте основной адрес.'); return; }
+    if(!confirm('Удалить спикера «'+name+'»'+(slug?' и файл '+slug+'.png':'')+'? Вернуть можно будет только через историю git.')) return;
+    if(slug){
+      pickStatus('Удаляю '+slug+'.png…');
+      try{ await ghDeleteFile('assets/avatars/'+slug+'.png','avatar: удалён '+slug+' ('+stamp()+')'); }
+      catch(err){ pickStatus('Файл не удалился: '+err.message,'err'); return; }
+    }
+    delete SPEAKERS[name];
+    [1,2].forEach(n=>{ if($('ed-sp'+n+'n').value===name){ $('ed-sp'+n+'n').value=''; $('ed-sp'+n+'f').value=''; } });
+    OPEN_CARD=null;
+    await afterSpeakerChange('удалён '+name);
+    return;
+  }
+}
+$('ed-pick-grid').addEventListener('click',e=>{
+  const card=e.target.closest('.pcard'); if(!card) return;
+  const more=e.target.closest('.more');
+  const act=e.target.closest('[data-act]');
+  if(more){
+    const key=card.classList.contains('orphan')?'orphan:'+card.dataset.file:card.dataset.name;
+    OPEN_CARD=OPEN_CARD===key?null:key; renderPicker(); return;
+  }
+  if(act){
+    const a=act.dataset.act;
+    if(a==='photo'){ card.querySelector('input[type=file]').click(); return; }
+    cardAction(card,a); return;
+  }
+  if(!e.target.closest('.main')) return;
+  if(card.classList.contains('orphan')){
+    /* Фото без имени: само по себе спикером не станет — ведём в форму добавления с этим файлом. */
+    const nameEl=$('ed-pick-name');
+    nameEl.dataset.file=card.dataset.file;
+    nameEl.placeholder='Имя для фото '+card.dataset.file+'.png';
+    $('ed-pick-file').value=card.dataset.file;
+    nameEl.focus();
+    pickStatus('Впишите имя и нажмите «Добавить». Фото '+card.dataset.file+'.png уже в репозитории, загружать его не нужно.');
+    return;
+  }
+  setSpeaker(PICK_N, card.dataset.name, card.dataset.file);
   closePicker();
 });
+$('ed-pick-grid').addEventListener('change',e=>{
+  const inp=e.target; if(inp.type!=='file') return;
+  const card=inp.closest('.pcard'), file=inp.files&&inp.files[0];
+  if(card&&file) cardAction(card,'photo',file);
+  inp.value='';
+});
 $('ed-pick-add').addEventListener('click',async ()=>{
-  const nameEl=$('ed-pick-name'), st=$('ed-pick-st'), imgEl=$('ed-pick-img'), btn=$('ed-pick-add');
+  const nameEl=$('ed-pick-name'), imgEl=$('ed-pick-img'), btn=$('ed-pick-add');
   const name=nameEl.value.trim();
-  if(!name){ st.className='st err'; st.textContent='Нужно имя спикера.'; nameEl.focus(); return; }
+  if(!name){ pickStatus('Нужно имя спикера.','err'); nameEl.focus(); return; }
+  if(name in SPEAKERS){ pickStatus('Такой спикер уже есть — выберите его карточкой.','err'); return; }
   const file=imgEl.files && imgEl.files[0];
-  /* Файл: выбранное фото без имени, иначе — транслит фамилии. Пишем его и без фото:
-     если картинку загрузят позже из панели, имя файла уже будет стоять правильное,
-     а до тех пор на странице инициалы — как у всех спикеров без фото. */
-  const slug=slugOK(nameEl.dataset.file||'') || slugFromName(name);
+  /* Файл: заданный руками, иначе фото без имени, иначе транслит фамилии. Пишем его и без фото:
+     когда картинку загрузят позже, имя файла уже будет стоять правильное, а до тех пор —
+     инициалы, как у всех спикеров без фото. */
+  const slug=slugOK($('ed-pick-file').value.trim()) || slugOK(nameEl.dataset.file||'') || slugFromName(name);
   if(file){
-    if(!slug){ st.className='st err'; st.textContent='Не смог сделать имя файла из фамилии — впишите его латиницей в поле «файл» в панели и загрузите фото там.'; return; }
-    st.className='st'; st.textContent='Загружаю '+slug+'.png…'; btn.disabled=true;
+    if(!slug){ pickStatus('Не смог сделать имя файла из фамилии — задайте его латиницей в поле «имя файла».','err'); return; }
+    pickStatus('Загружаю '+slug+'.png…'); btn.disabled=true;
     try{ await uploadAvatarFile(file, slug); }
-    catch(err){
-      console.warn('avatar upload failed:', err);
-      st.className='st err'; st.textContent='Фото не загрузилось: '+err.message; btn.disabled=false; return;
-    }
+    catch(err){ console.warn('avatar upload failed:', err); pickStatus('Фото не загрузилось: '+err.message,'err'); btn.disabled=false; return; }
+    btn.disabled=false;
   }
   if(ORPHANS) ORPHANS=ORPHANS.filter(f=>f!==slug);
+  SPEAKERS[name]=slug;
   setSpeaker(PICK_N, name, slug);
   resetPickForm();
+  try{ await saveSpeakers('добавлен '+name); }
+  catch(err){ console.warn('speakers save failed:', err); alert('Спикер поставлен в день, но список спикеров не сохранился: '+err.message); }
   closePicker();
 });
 $('ed-pick-name').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); $('ed-pick-add').click(); } });
@@ -1282,7 +1464,6 @@ $('ed-pick-q').addEventListener('input',renderPicker);
 $('ed-pick-close').addEventListener('click',closePicker);
 $('ed-pick').addEventListener('click',e=>{ if(e.target.id==='ed-pick') closePicker(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Escape' && $('ed-pick').classList.contains('on')) closePicker(); });
-document.querySelectorAll('#ed-panel .pick').forEach(b=>b.addEventListener('click',()=>openPicker(parseInt(b.dataset.n,10))));
 
 document.getElementById('stage').addEventListener('click',e=>{
   if(!editMode) return;
@@ -1305,8 +1486,6 @@ $('ed-pass').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin();});
 $('ed-apply').addEventListener('click',applyPanel);
 $('ed-clear').addEventListener('click',clearDay);
 $('ed-pub').addEventListener('click',publish);
-$('ed-sp1img').addEventListener('change',()=>onPickAvatar(1));
-$('ed-sp2img').addEventListener('change',()=>onPickAvatar(2));
 $('ed-exit').addEventListener('click',exitEdit);
 $('ed-close').addEventListener('click',()=>{ $('ed-panel').classList.remove('on'); sel=null; });
 $('ed-type').addEventListener('change',()=>{
